@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Binance Gold - Admin Panel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<script>
+(function(){
+  var key='bg_theme';
+  var mode='dark';
+  try { mode=localStorage.getItem(key)==='light' ? 'light' : 'dark'; } catch(e){}
+  document.documentElement.setAttribute('data-theme', mode);
+})();
+</script>
+
+<script>
+// ===== EMBEDDED CONFIG - ไม่ต้องพึ่ง config.js =====
+(function() {
+  var LocalDB = {
+    _get: function(key) { try { var d = localStorage.getItem('bg_' + key); return d ? JSON.parse(d) : null; } catch(e) { return null; } },
+    _set: function(key, val) { try { localStorage.setItem('bg_' + key, JSON.stringify(val)); } catch(e) {} },
+    getUsers: function() { return this._get('users') || []; },
+    setUsers: function(d) { this._set('users', d); },
+    getDeposits: function() { return this._get('deposits') || []; },
+    setDeposits: function(d) { this._set('deposits', d); },
+    getWithdraws: function() { return this._get('withdraws') || []; },
+    setWithdraws: function(d) { this._set('withdraws', d); },
+    getTrades: function() { return this._get('trades') || []; },
+    setTrades: function(d) { this._set('trades', d); },
+    getChats: function() { return this._get('chats') || []; },
+    setChats: function(d) { this._set('chats', d); },
+    getKycs: function() { return this._get('kycs') || []; },
+    setKycs: function(d) { this._set('kycs', d); },
+    getAdmins: function() { return this._get('admins') || []; },
+    setAdmins: function(d) { this._set('admins', d); },
+    getSettings: function() { return this._get('settings') || {}; },
+    setSettings: function(d) { this._set('settings', d); },
+    getCurrentUser: function() { return this._get('current_user'); },
+    setCurrentUser: function(d) { this._set('current_user', d); }
+  };
+
+  // Production safety: business records never use browser storage. Keep only UI preferences (theme/language) in localStorage.
+  ['users','deposits','withdraws','trades','funds','chats','kycs','admins'].forEach(function(k){
+    LocalDB['get'+k.charAt(0).toUpperCase()+k.slice(1)] = function(){ return []; };
+    LocalDB['set'+k.charAt(0).toUpperCase()+k.slice(1)] = function(){ return; };
+  });
+  LocalDB.getSettings = function(){ return {}; };
+  LocalDB.setSettings = function(){ return; };
+  LocalDB.getCurrentUser = function(){ return null; };
+  LocalDB.setCurrentUser = function(){ return; };
+  window.LocalDB = LocalDB;
+  window.DB = {
+    getUsers: function() { return Promise.resolve(LocalDB.getUsers()); },
+    getUserById: function(id) { var u = LocalDB.getUsers().find(function(x){return x.id===id}); return Promise.resolve(u); },
+    createUser: function(user) { var a = LocalDB.getUsers(); a.push(user); LocalDB.setUsers(a); return Promise.resolve(user); },
+    updateUser: function(id, up) { var a = LocalDB.getUsers().map(function(x){return x.id===id?Object.assign({},x,up):x}); LocalDB.setUsers(a); return Promise.resolve(a.find(function(x){return x.id===id})); },
+    setCurrentUser: function(u) { LocalDB.setCurrentUser(u); return Promise.resolve(); },
+    getCurrentUser: function() { return Promise.resolve(LocalDB.getCurrentUser()); },
+    getDeposits: function() { return Promise.resolve(LocalDB.getDeposits()); },
+    getDepositsByUser: function(uid) { return Promise.resolve(LocalDB.getDeposits().filter(function(d){return d.user_id===uid||d.userId===uid})); },
+    createDeposit: function(d) { var a = LocalDB.getDeposits(); a.push(d); LocalDB.setDeposits(a); return Promise.resolve(d); },
+    updateDeposit: function(id, up) { var a = LocalDB.getDeposits().map(function(x){return x.id===id?Object.assign({},x,up):x}); LocalDB.setDeposits(a); return Promise.resolve(a.find(function(x){return x.id===id})); },
+    getWithdraws: function() { return Promise.resolve(LocalDB.getWithdraws()); },
+    getWithdrawsByUser: function(uid) { return Promise.resolve(LocalDB.getWithdraws().filter(function(w){return w.user_id===uid||w.userId===uid})); },
+    createWithdraw: function(w) { var a = LocalDB.getWithdraws(); a.push(w); LocalDB.setWithdraws(a); return Promise.resolve(w); },
+    updateWithdraw: function(id, up) { var a = LocalDB.getWithdraws().map(function(x){return x.id===id?Object.assign({},x,up):x}); LocalDB.setWithdraws(a); return Promise.resolve(a.find(function(x){return x.id===id})); },
+    getTrades: function() { return Promise.resolve(LocalDB.getTrades()); },
+    getTradesByUser: function(uid) { return Promise.resolve(LocalDB.getTrades().filter(function(t){return t.user_id===uid||t.userId===uid})); },
+    createTrade: function(t) { var a = LocalDB.getTrades(); a.push(t); LocalDB.setTrades(a); return Promise.resolve(t); },
+    updateTrade: function(id, up) { var a = LocalDB.getTrades().map(function(x){return x.id===id?Object.assign({},x,up):x}); LocalDB.setTrades(a); return Promise.resolve(a.find(function(x){return x.id===id})); },
+    getChats: function() { return Promise.resolve(LocalDB.getChats()); },
+    getChatsByUser: function(uid) { return Promise.resolve(LocalDB.getChats().filter(function(c){return c.user_id===uid||c.userId===uid})); },
+    createChat: function(c) { var a = LocalDB.getChats(); a.push(c); LocalDB.setChats(a); return Promise.resolve(c); },
+    deleteChatsByUser: function(uid) { var a = LocalDB.getChats().filter(function(c){return c.user_id!==uid&&c.userId!==uid}); LocalDB.setChats(a); return Promise.resolve(); },
+    getKycs: function() { return Promise.resolve(LocalDB.getKycs()); },
+    createKyc: function(k) { var a = LocalDB.getKycs(); a.push(k); LocalDB.setKycs(a); return Promise.resolve(k); },
+    updateKyc: function(id, up) { var a = LocalDB.getKycs().map(function(x){return x.id===id?Object.assign({},x,up):x}); LocalDB.setKycs(a); return Promise.resolve(a.find(function(x){return x.id===id})); },
+    getAdmins: function() { return Promise.resolve(LocalDB.getAdmins()); },
+    createAdmin: function(a) { var arr = LocalDB.getAdmins(); arr.push(a); LocalDB.setAdmins(arr); return Promise.resolve(a); },
+    deleteAdmin: function(id) { var arr = LocalDB.getAdmins().filter(function(a){return a.id!==id}); LocalDB.setAdmins(arr); return Promise.resolve(); },
+    getSettings: function() { var s = LocalDB.getSettings(); if(!s.siteName)s={siteName:'Binance Gold',site_name:'Binance Gold',welcomeText:'เริ่มปั่นพอร์ตกันเลย',welcome_text:'เริ่มปั่นพอร์ตกันเลย',aboutUs:'ยินดีต้อนรับสู่ Binance Gold',about_us:'ยินดีต้อนรับสู่ Binance Gold',withdrawFee:1,withdraw_fee:1,minWithdraw:10,min_withdraw:10,p2pAddress:'TLrt3947ScuuCguGRsKibuWvp9iZwmixXj',p2p_address:'TLrt3947ScuuCguGRsKibuWvp9iZwmixXj',p2pWithdrawFee:1,p2p_withdraw_fee:1,p2pMinWithdraw:10,p2p_min_withdraw:10,maintenance:false,packages:'[{"percent":10,"amount":100},{"percent":30,"amount":1000},{"percent":40,"amount":2000},{"percent":60,"amount":4000},{"percent":70,"amount":6000},{"percent":80,"amount":10000}]',packages_json:'[{"percent":10,"amount":100},{"percent":30,"amount":1000},{"percent":40,"amount":2000},{"percent":60,"amount":4000},{"percent":70,"amount":6000},{"percent":80,"amount":10000}]',autoTradeEnabled:false,auto_trade_enabled:false,autoWinRate:50,auto_win_rate:50,autoTradeDelay:5,auto_trade_delay:5,autoTradeMode:'random',auto_trade_mode:'random'}; return Promise.resolve(s); },
+    updateSettings: function(up) { var s = Object.assign({}, LocalDB.getSettings(), up); LocalDB.setSettings(s); return Promise.resolve(s); },
+    uploadFile: function() { return Promise.resolve(null); }
+  };
+  window.DB = window.DB;
+  window.Auth = { getSession: function() { return Promise.resolve(null); } };
+  window.isSupabaseConnected = function() { return false; };
+  window.supabaseClient = null;
+  console.log('[BG] Embedded config ready');
+})();
+</script>
+
+<style>
+* { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; }
+body { background: #050505; color: #e5e5e5; margin: 0; padding: 0; overflow-x: hidden; }
+.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #050505; position: relative; }
+.login-page::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, rgba(234, 179, 8, 0.08) 0%, transparent 50%); pointer-events: none; }
+.login-container { width: 100%; max-width: 420px; padding: 20px; position: relative; z-index: 1; }
+.login-card { background: #0a0a0a; border-radius: 24px; padding: 40px 32px; border: 1px solid #1a1a1a; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); }
+.login-title { font-size: 1.8rem; font-weight: 800; color: #f0b90b; text-align: center; margin-bottom: 8px; }
+.login-subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 32px; }
+.login-input-group { margin-bottom: 20px; }
+.login-input-group label { display: block; font-size: 13px; font-weight: 600; color: #888; margin-bottom: 8px; }
+.login-input { width: 100%; background: #111 !important; border: 1px solid #333 !important; color: #fff !important; border-radius: 12px !important; padding: 14px 16px !important; font-size: 15px !important; outline: none !important; }
+.login-input:focus { border-color: #eab308 !important; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.15) !important; }
+.login-btn { width: 100%; background: linear-gradient(135deg, #eab308, #d4a003); color: #000; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+.login-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(234, 179, 8, 0.3); }
+.login-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 500; margin-bottom: 20px; display: none; }
+.login-error.show { display: flex; }
+.admin-panel { display: none; min-height: 100vh; }
+.admin-panel.show { display: block; }
+.sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: #0a0a0a; border-right: 1px solid #1a1a1a; z-index: 50; overflow-y: auto; transition: transform 0.3s; }
+.sidebar-item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: pointer; transition: all 0.2s; color: #888; border-left: 3px solid transparent; }
+.sidebar-item:hover { background: #111; color: white; }
+.sidebar-item.active { background: rgba(234, 179, 8, 0.1); color: #eab308; border-left-color: #eab308; }
+.sidebar-item .badge-count { margin-left: auto; background: #ef4444; color: white; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+.main-content { margin-left: 260px; min-height: 100vh; background: #050505; }
+.header { position: sticky; top: 0; background: rgba(5,5,5,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid #1a1a1a; padding: 16px 24px; z-index: 40; display: flex; justify-content: space-between; align-items: center; }
+.card { background: #0a0a0a; border-radius: 16px; padding: 20px; border: 1px solid #1a1a1a; }
+.stat-card { background: #0a0a0a; border-radius: 16px; padding: 20px; border: 1px solid #1a1a1a; transition: all 0.2s; }
+.stat-card:hover { border-color: #eab308; }
+.btn-primary { background: #eab308; color: #000; padding: 10px 20px; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+.btn-primary:hover { background: #facc15; }
+.btn-danger { background: #ef4444; color: white; padding: 10px 20px; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; }
+.btn-danger:hover { background: #dc2626; }
+.btn-success { background: #22c55e; color: white; padding: 10px 20px; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; }
+.btn-warning { background: #f59e0b; color: #000; padding: 10px 20px; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; }
+.btn-secondary { background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 10px; font-weight: 600; border: 1px solid #333; cursor: pointer; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.badge-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.badge-failed { background: rgba(100, 100, 100, 0.2); color: #888; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; border-bottom: 1px solid #1a1a1a; }
+td { padding: 12px 16px; border-bottom: 1px solid #1a1a1a; font-size: 14px; color: #ccc; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+.modal.active { display: flex; }
+.modal-content { background: #0a0a0a; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; border-radius: 20px; border: 1px solid #1a1a1a; padding: 24px; }
+.modal-content.wide { max-width: 900px; }
+.modal-content.xl { max-width: 1000px; }
+.toast { position: fixed; top: 20px; right: 20px; background: #0a0a0a; color: white; padding: 14px 24px; border-radius: 12px; border: 1px solid #1a1a1a; z-index: 200; opacity: 0; transition: all 0.3s; font-weight: 600; }
+.toast.show { opacity: 1; }
+.toast.alert { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.toast.success { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.chat-message { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; margin-bottom: 8px; }
+.chat-message.admin { background: #eab308; color: #000; border-radius: 16px 16px 4px 16px; align-self: flex-end; margin-left: auto; }
+.chat-message.user { background: #1a1a1a; color: white; border-radius: 16px 16px 16px 4px; align-self: flex-start; border: 1px solid #333; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 1024px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .main-content { margin-left: 0; } .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } }
+@media (max-width: 640px) { .grid-4 { grid-template-columns: 1fr; } }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; color: #888; margin-bottom: 6px; font-weight: 500; }
+.action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.action-btns button { font-size: 12px; padding: 6px 12px; }
+.detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
+.detail-label { color: #888; font-size: 13px; }
+.detail-value { font-weight: 600; color: #fff; }
+.img-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; cursor: pointer; border: 2px solid #333; }
+.admin-panel input:not(.login-input):not([type="checkbox"]):not([type="radio"]),
+.admin-panel select,
+.admin-panel textarea { background: #111 !important; border: 1px solid #333 !important; color: #fff !important; border-radius: 10px !important; padding: 12px 14px !important; width: 100% !important; font-size: 14px !important; }
+.admin-panel input:focus, .admin-panel select:focus, .admin-panel textarea:focus { border-color: #eab308 !important; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.15) !important; }
+.modal-content input, .modal-content select, .modal-content textarea { color: #000 !important; font-size: 15px !important; font-weight: 600 !important; background: #fbbf24 !important; border-color: #d4a003 !important; }
+.modal-content input[type="number"] { color: #000 !important; font-size: 16px !important; font-weight: 700 !important; background: #fbbf24 !important; }
+.modal-content .detail-value { color: #fbbf24 !important; font-weight: 700 !important; }
+.modal-content input::placeholder, .modal-content textarea::placeholder { color: #666 !important; }
+.modal-content select option { color: #000 !important; background: #fbbf24 !important; }
+.modal-content label { color: #ccc !important; font-weight: 500 !important; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #eab308; animation: spin 0.8s linear infinite; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.mobile-menu-btn { display: none; }
+@media (max-width: 1024px) { .mobile-menu-btn { display: block; } }
+.lang-switcher { display: flex; gap: 8px; margin-bottom: 16px; }
+.lang-switcher button { padding: 6px 12px; border-radius: 8px; border: 1px solid #333; background: #111; color: #888; cursor: pointer; font-size: 12px; }
+.lang-switcher button.active { background: #eab308; color: #000; border-color: #eab308; font-weight: 700; }
+.chat-user-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+.chat-user-item:hover { background: #111; border-color: #333; }
+.chat-user-item.active { background: rgba(234, 179, 8, 0.1); border-color: #eab308; }
+.chat-user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #eab308; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.kyc-img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.kyc-img-item { cursor: pointer; border-radius: 12px; overflow: hidden; border: 2px solid #333; transition: all 0.2s; }
+.kyc-img-item:hover { border-color: #eab308; }
+.kyc-img-item img { width: 100%; height: 120px; object-fit: cover; }
+.kyc-img-label { text-align: center; padding: 8px; font-size: 12px; color: #888; background: #111; }
+.slip-preview { max-width: 100%; max-height: 300px; border-radius: 12px; border: 2px solid #333; }
+.trade-profit-input { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+/* ===== SHARED BINANCE GOLD THEME / LOGOUT UX ===== */
+.theme-switch-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid #333; background:#111; color:#e5e5e5; cursor:pointer; font-size:13px; font-weight:700; }
+.theme-switch-btn i { color:#f0b90b; }
+.theme-switch-btn:hover { border-color:#eab308; }
+.admin-logout-confirm { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.66); backdrop-filter:blur(7px); }
+.admin-logout-confirm.active { display:flex; }
+.admin-logout-card { width:min(92vw,390px); background:#fff; color:#111827; border-radius:14px; padding:28px 24px 22px; box-shadow:0 24px 70px rgba(0,0,0,.30); border:1px solid #e5e7eb; text-align:center; }
+.admin-logout-icon { width:58px; height:58px; margin:0 auto 18px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:4px solid #f0b90b; color:#f0b90b; font-size:30px; line-height:1; }
+.admin-logout-card h2 { margin:0 0 24px; font-size:18px; line-height:1.55; font-weight:700; letter-spacing:-.01em; }
+.admin-logout-actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.admin-logout-cancel, .admin-logout-confirm { min-height:46px; border:0; border-radius:7px; font-size:15px; font-weight:700; cursor:pointer; padding:10px 14px; transition:transform .15s ease,filter .15s ease,opacity .15s ease; }
+.admin-logout-cancel { background:#e5e7eb; color:#111827; }
+.admin-logout-confirm { background:#f0b90b; color:#111; }
+.admin-logout-cancel:hover, .admin-logout-confirm:hover { filter:brightness(.97); transform:translateY(-1px); }
+.admin-logout-cancel:focus-visible, .admin-logout-confirm:focus-visible { outline:2px solid #f0b90b; outline-offset:3px; }
+html[data-theme="dark"] .admin-logout-card { background:#151a1f; color:#f5f5f5; border-color:#333a42; box-shadow:0 24px 80px rgba(0,0,0,.58); }
+html[data-theme="dark"] .admin-logout-cancel { background:#2b323a; color:#f5f5f5; }
+html[data-theme="dark"] .admin-logout-confirm { background:#f0b90b; color:#111; }
+html[data-theme="light"] body { background:#fafaf7 !important; color:#1f2937 !important; }
+html[data-theme="light"] .sidebar, html[data-theme="light"] .header { background:#fff !important; border-color:#e5e5de !important; color:#1f2937 !important; }
+html[data-theme="light"] .sidebar-item { color:#4b5563 !important; }
+html[data-theme="light"] .sidebar-item:hover { background:#f6f6f1 !important; color:#111827 !important; }
+html[data-theme="light"] .sidebar-item.active { background:rgba(234,179,8,.14) !important; color:#111827 !important; }
+html[data-theme="light"] .card, html[data-theme="light"] .stat-card { background:#fff !important; border-color:#e5e5de !important; color:#1f2937 !important; }
+html[data-theme="light"] .bg-\[\#111\] { background:#fff !important; }
+html[data-theme="light"] .text-white { color:#111827 !important; }
+html[data-theme="light"] .text-gray-300 { color:#374151 !important; }
+html[data-theme="light"] .text-gray-400 { color:#4b5563 !important; }
+html[data-theme="light"] .text-gray-500 { color:#6b7280 !important; }
+html[data-theme="light"] input, html[data-theme="light"] select, html[data-theme="light"] textarea { background:#fff !important; color:#111827 !important; border-color:#d4d4cc !important; }
+html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; border-color:#d4d4cc; }
+@media (max-width:640px){ .admin-logout-card{width:min(92vw,350px);padding:24px 18px 18px;border-radius:13px;} .admin-logout-icon{width:52px;height:52px;font-size:27px;margin-bottom:15px;} .admin-logout-card h2{margin-bottom:20px;font-size:16px;} .admin-logout-actions{gap:9px;} .admin-logout-cancel,.admin-logout-confirm{min-height:44px;font-size:14px;} .theme-switch-btn span{display:none;} }
+
+
+/* Professional theme toggle: icon only; localized label remains available to screen readers. */
+.theme-switch-btn { width:42px; height:42px; min-width:42px; padding:0 !important; display:inline-flex; align-items:center; justify-content:center; gap:0 !important; }
+.theme-switch-btn #adminThemeIcon { font-size:17px; }
+.theme-switch-btn #adminThemeLabel { display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN PAGE -->
+<div class="login-page" id="loginPage">
+<div class="login-container">
+<div class="login-card">
+<div class="text-center mb-6">
+<div class="text-4xl mb-2">🛡️</div>
+<div class="login-title" id="adminLoginSiteName">Binance Gold</div>
+<div class="login-subtitle" id="loginSubtitle" data-i18n="loginSubtitle">เข้าสู่ระบบผู้ดูแลระบบ</div>
+</div>
+<div class="login-error" id="loginError"><i class="fas fa-exclamation-circle mr-2"></i><span id="loginErrorText" data-i18n="loginError">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</span></div>
+<div class="login-input-group">
+<label data-i18n="usernameLabel"><i class="fas fa-user mr-2"></i>ชื่อผู้ใช้</label>
+<input type="text" id="loginUsername" class="login-input" placeholder="กรอกชื่อผู้ใช้" data-i18n-ph="usernamePlaceholder" value=""/>
+</div>
+<div class="login-input-group">
+<label data-i18n="passwordLabel"><i class="fas fa-lock mr-2"></i>รหัสผ่าน</label>
+<input type="password" id="loginPassword" class="login-input" placeholder="กรอกรหัสผ่าน" data-i18n-ph="passwordPlaceholder" value=""/>
+</div>
+<button class="login-btn" id="loginBtn" data-i18n="loginBtn" onclick="doLogin()"><i class="fas fa-sign-in-alt mr-2"></i> เข้าสู่ระบบ</button>
+<div class="text-center mt-4 text-sm text-gray-500">
+<a href="index.html" class="text-yellow-500 hover:underline" data-i18n="backToSite"><i class="fas fa-arrow-left mr-1"></i> กลับไปหน้าเว็บไซต์</a>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="adminPanel">
+<div class="sidebar" id="sidebar">
+<div class="p-6 border-b border-[#1a1a1a]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center text-black text-lg"><i class="fas fa-shield-alt"></i></div>
+<div><div class="font-bold text-lg text-white">Binance Gold Admin</div><div class="text-xs text-gray-500" id="adminSidebarSiteName">Binance Gold</div></div>
+</div>
+</div>
+<nav class="py-4">
+<div class="sidebar-item active" onclick="showAdminTab('dashboard', this)"><i class="fas fa-chart-line w-5"></i><span id="menuDashboard">แดชบอร์ด</span></div>
+<div class="sidebar-item" onclick="showAdminTab('users', this)"><i class="fas fa-users w-5"></i><span id="menuUsers">จัดการสมาชิก</span></div>
+<div class="sidebar-item" onclick="showAdminTab('deposits', this)"><i class="fas fa-arrow-down w-5"></i><span id="menuDeposits">รายการฝากเงิน</span><span class="badge-count" id="badgeDeposits">0</span></div>
+<div class="sidebar-item" onclick="showAdminTab('withdraws', this)"><i class="fas fa-arrow-up w-5"></i><span id="menuWithdraws">รายการถอนเงิน</span><span class="badge-count" id="badgeWithdraws">0</span></div>
+<div class="sidebar-item" onclick="showAdminTab('trades', this)"><i class="fas fa-exchange-alt w-5"></i><span id="menuTrades">จัดการการซื้อขาย</span><span class="badge-count" id="badgeTrades">0</span></div>
+<div class="sidebar-item" onclick="showAdminTab('fund', this)"><i class="fas fa-piggy-bank w-5"></i><span id="menuFund">จัดการกองทุน</span><span class="badge-count" id="badgeFund">0</span></div>
+<div class="sidebar-item" onclick="showAdminTab('kyc', this)"><i class="fas fa-id-card w-5"></i><span id="menuKyc">ยืนยันตัวตน (KYC)</span><span class="badge-count" id="badgeKyc">0</span></div>
+<div class="sidebar-item" onclick="showAdminTab('chat', this)"><i class="fas fa-comments w-5"></i><span id="menuChat">แชทลูกค้า</span><span class="badge-count" id="badgeChat">0</span></div>
+<div class="sidebar-item" onclick="showAdminTab('admins', this)"><i class="fas fa-user-shield w-5"></i><span id="menuAdmins">ผู้ดูแลระบบ</span></div>
+<div class="sidebar-item" onclick="showAdminTab('p2p', this)"><i class="fas fa-qrcode w-5"></i><span id="menuP2P">ตั้งค่า P2P</span></div>
+<div class="sidebar-item" onclick="showAdminTab('settings', this)"><i class="fas fa-cog w-5"></i><span id="menuSettings">ตั้งค่าเว็บไซต์</span></div>
+</nav>
+<div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; border-top: 1px solid #1a1a1a;">
+<button class="w-full bg-[#1a1a1a] hover:bg-[#222] text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 border border-[#333]" onclick="logoutAdmin()">
+<i class="fas fa-sign-out-alt"></i> <span id="menuLogout">ออกจากระบบ</span>
+</button>
+</div>
+</div>
+
+<div class="main-content">
+<div class="header">
+<div class="flex items-center gap-4">
+<button class="mobile-menu-btn bg-[#111] p-2 rounded-lg border border-[#333]" onclick="toggleSidebar()"><i class="fas fa-bars text-white"></i></button>
+<h1 class="text-xl font-bold text-white" id="pageTitle">แดชบอร์ด</h1>
+</div>
+<div class="flex items-center gap-4">
+<button type="button" id="adminThemeToggle" class="theme-switch-btn" onclick="toggleAdminTheme()" aria-label="สลับโหมดสี" title="สลับโหมดสี"><i id="adminThemeIcon" class="fas fa-moon" aria-hidden="true"></i><span id="adminThemeLabel" class="sr-only">โหมดมืด</span></button>
+<div class="lang-switcher" style="position:relative;">
+<button id="adminLangBtn" onclick="toggleAdminLangMenu(event)" style="display:flex;align-items:center;gap:6px;"><span id="adminLangFlag" style="font-size:18px;">🇹🇭</span><span id="adminLangCode">TH</span><i class="fas fa-chevron-down" style="font-size:9px;"></i></button>
+<div id="adminLangMenu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:#161616;border:1px solid #333;border-radius:12px;padding:6px;z-index:200;min-width:160px;box-shadow:0 10px 30px rgba(0,0,0,.6);flex-direction:column;gap:4px;">
+<button onclick="setAdminLang('th')" id="langTh" class="active admin-lang-opt" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;"><span style="font-size:16px;">🇹🇭</span> ไทย</button>
+<button onclick="setAdminLang('en')" id="langEn" class="admin-lang-opt" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;"><span style="font-size:16px;">🇬🇧</span> English</button>
+<button onclick="setAdminLang('zh')" id="langZh" class="admin-lang-opt" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;"><span style="font-size:16px;">🇨🇳</span> 中文</button>
+</div>
+</div>
+<div class="text-right">
+<div class="text-sm font-bold text-white" id="adminDisplayName">Admin</div>
+<div class="text-xs text-gray-500">ผู้ดูแลระบบ</div>
+</div>
+<div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center"><i class="fas fa-user-shield text-black"></i></div>
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="tab-content active p-6" id="tab-dashboard">
+<!-- ปุ่มแก้ไขข้อความหน้าแรก (เพิ่มใหม่) -->
+<div class="mb-6"><button class="btn-primary" onclick="openHomeTextEditor()"><i class="fas fa-pen"></i> แก้ไขข้อความหน้าแรก</button></div>
+<div class="grid-4 mb-6">
+<div class="stat-card">
+<div class="flex items-center justify-between mb-2">
+<div class="text-gray-500 text-sm" id="statUsersLabel">สมาชิกทั้งหมด</div>
+<div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center"><i class="fas fa-users text-blue-400 text-sm"></i></div>
+</div>
+<div class="text-3xl font-bold text-white" id="statUsers">0</div>
+<div class="text-xs text-gray-500 mt-1" id="subUsersLabel">registered users</div>
+</div>
+<div class="stat-card">
+<div class="flex items-center justify-between mb-2">
+<div class="text-gray-500 text-sm" id="statPendingDepositsLabel">ฝากเงินรออนุมัติ</div>
+<div class="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center"><i class="fas fa-arrow-down text-yellow-400 text-sm"></i></div>
+</div>
+<div class="text-3xl font-bold text-yellow-400" id="statPendingDeposits">0</div>
+<div class="text-xs text-gray-500 mt-1" id="subDepositsLabel">pending deposits</div>
+</div>
+<div class="stat-card">
+<div class="flex items-center justify-between mb-2">
+<div class="text-gray-500 text-sm" id="statPendingWithdrawsLabel">ถอนเงินรออนุมัติ</div>
+<div class="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center"><i class="fas fa-arrow-up text-red-400 text-sm"></i></div>
+</div>
+<div class="text-3xl font-bold text-red-400" id="statPendingWithdraws">0</div>
+<div class="text-xs text-gray-500 mt-1" id="subWithdrawsLabel">pending withdrawals</div>
+</div>
+<div class="stat-card">
+<div class="flex items-center justify-between mb-2">
+<div class="text-gray-500 text-sm" id="statPendingTradesLabel">ซื้อขายรอผล</div>
+<div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center"><i class="fas fa-exchange-alt text-green-400 text-sm"></i></div>
+</div>
+<div class="text-3xl font-bold text-green-400" id="statPendingTrades">0</div>
+<div class="text-xs text-gray-500 mt-1" id="subTradesLabel">pending trades</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+<div class="card lg:col-span-2">
+<h3 class="font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-chart-bar text-yellow-400"></i><span id="dashStatsTitle" data-i18n="dashStats">สถิติรวม</span></h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-[#111] p-4 rounded-xl text-center">
+<div class="text-2xl font-bold text-white" id="dashTotalDeposits">0</div>
+<div class="text-xs text-gray-500" id="statTotalDepositsLabel">ฝากทั้งหมด</div>
+</div>
+<div class="bg-[#111] p-4 rounded-xl text-center">
+<div class="text-2xl font-bold text-white" id="dashTotalWithdraws">0</div>
+<div class="text-xs text-gray-500" id="statTotalWithdrawsLabel">ถอนทั้งหมด</div>
+</div>
+<div class="bg-[#111] p-4 rounded-xl text-center">
+<div class="text-2xl font-bold text-white" id="dashTotalTrades">0</div>
+<div class="text-xs text-gray-500" id="statTotalTradesLabel">ซื้อขายทั้งหมด</div>
+</div>
+<div class="bg-[#111] p-4 rounded-xl text-center">
+<div class="text-2xl font-bold text-white" id="dashTotalKyc">0</div>
+<div class="text-xs text-gray-500" id="statKycPendingLabel">KYC รอตรวจสอบ</div>
+</div>
+</div>
+</div>
+<div class="card">
+<h3 class="font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-wallet text-yellow-400"></i><span data-i18n="balanceCard">ยอดเงินในระบบ</span></h3>
+<div class="space-y-3">
+<div class="flex justify-between items-center p-3 bg-[#111] rounded-xl">
+<span class="text-sm text-gray-400" id="balTotalUsersLabel">ยอดรวมสมาชิก</span>
+<span class="font-bold text-white" id="dashTotalBalance">$0.00</span>
+</div>
+<div class="flex justify-between items-center p-3 bg-[#111] rounded-xl">
+<span class="text-sm text-gray-400" id="balApprovedDepositsLabel">ยอดฝากอนุมัติ</span>
+<span class="font-bold text-green-400" id="dashApprovedDeposits">$0.00</span>
+</div>
+<div class="flex justify-between items-center p-3 bg-[#111] rounded-xl">
+<span class="text-sm text-gray-400" id="balApprovedWithdrawsLabel">ยอดถอนอนุมัติ</span>
+<span class="font-bold text-red-400" id="dashApprovedWithdraws">$0.00</span>
+</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="card"><h3 class="font-bold mb-4 text-white"><i class="fas fa-user-plus text-yellow-400 mr-2"></i><span id="dashUsersTitle" data-i18n="dashUsers">สมาชิกล่าสุด</span></h3><div class="space-y-3" id="dashboardUsers" style="max-height: 400px; overflow-y: auto;"></div></div>
+<div class="card"><h3 class="font-bold mb-4 text-white"><i class="fas fa-bell text-red-400 mr-2"></i><span id="dashNotifTitle" data-i18n="dashNotif">แจ้งเตือนล่าสุด</span></h3><div class="space-y-3" id="dashboardNotifications" style="max-height: 400px; overflow-y: auto;"></div></div>
+</div>
+</div>
+
+<!-- USERS -->
+<div class="tab-content p-6" id="tab-users">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold text-white" id="usersTitle" data-i18n="users">จัดการสมาชิก</h2>
+<input type="text" placeholder="ค้นหา..." data-i18n-ph="searchPh" id="userSearch" onkeyup="searchUsers()" style="width: 250px !important; background: #111 !important;"/>
+</div>
+<div class="card"><div class="overflow-x-auto"><table><thead><tr><th data-i18n="thMember">สมาชิก</th><th data-i18n="thPhone">เบอร์โทร</th><th data-i18n="thBalance">ยอดเงิน</th><th>VIP</th><th>KYC</th><th data-i18n="thStatus">สถานะ</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
+</div>
+
+<!-- DEPOSITS -->
+<div class="tab-content p-6" id="tab-deposits">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold text-white" id="depositsTitle" data-i18n="deposits">รายการฝากเงิน</h2>
+<select id="depositFilter" onchange="loadDeposits()" style="width: 150px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved" data-i18n="optApproved">อนุมัติแล้ว</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option></select>
+</div>
+<div class="card"><div class="overflow-x-auto"><table><thead><tr><th>ID</th><th data-i18n="thMember">สมาชิก</th><th data-i18n="thType">ประเภท</th><th data-i18n="thAmount">จำนวน</th><th data-i18n="thSlip">สลิป</th><th data-i18n="thStatus">สถานะ</th><th data-i18n="thDate">วันที่</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="depositsTable"></tbody></table></div></div>
+</div>
+
+<!-- WITHDRAWS -->
+<div class="tab-content p-6" id="tab-withdraws">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold text-white" id="withdrawsTitle" data-i18n="withdraws">รายการถอนเงิน</h2>
+<select id="withdrawFilter" onchange="loadWithdraws()" style="width: 150px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved" data-i18n="optApproved">อนุมัติแล้ว</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option><option value="failed" data-i18n="optFailed">ล้มเหลว</option></select>
+</div>
+<div class="card"><div class="overflow-x-auto"><table><thead><tr><th>ID</th><th data-i18n="thMember">สมาชิก</th><th data-i18n="thType">ประเภท</th><th data-i18n="thAmount">จำนวน</th><th data-i18n="thInfo">ข้อมูล</th><th data-i18n="thStatus">สถานะ</th><th data-i18n="thDate">วันที่</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="withdrawsTable"></tbody></table></div></div>
+</div>
+
+<!-- TRADES -->
+<div class="tab-content p-6" id="tab-trades">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold text-white" id="tradesTitle" data-i18n="trades">จัดการการซื้อขาย</h2>
+<select id="tradeFilter" onchange="loadTrades()" style="width: 150px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="pending" data-i18n="optPending">รอผล</option><option value="win" data-i18n="optWin">ชนะ</option><option value="lose" data-i18n="optLose">แพ้</option></select>
+</div>
+<div class="card"><div class="overflow-x-auto"><table><thead><tr><th>ID</th><th data-i18n="thMember">สมาชิก</th><th data-i18n="thPair">คู่เงิน</th><th data-i18n="thType">ประเภท</th><th data-i18n="thAmount">จำนวน</th><th data-i18n="thPackage">แพ็คเกจ</th><th data-i18n="thRemain">เวลาคงเหลือ</th><th data-i18n="thResult">ผล</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="tradesTable"></tbody></table></div></div>
+</div>
+
+<!-- FUND (กองทุน) -->
+<div class="tab-content p-6" id="tab-fund">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold text-white" id="fundTitle" data-i18n="fund">จัดการกองทุน</h2>
+<select id="fundFilter" onchange="loadFundInvestments()" style="width: 170px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="active" data-i18n="optActive">กำลังลงทุน</option><option value="expired" data-i18n="optExpired">ครบกำหนด รอผล</option><option value="win" data-i18n="optWin">ชนะ</option><option value="lose" data-i18n="optFundLose">ขาดทุน</option></select>
+</div>
+
+<div class="card mb-6">
+<h3 class="font-bold mb-2 text-white"><i class="fas fa-box-open text-yellow-400 mr-2"></i><span data-i18n="fundPkgCard">แพ็คเกจกองทุน (แสดงหน้าเว็บ)</span></h3>
+<p class="text-xs text-gray-500 mb-4">จำนวนเงิน / เปอร์เซ็นต์กำไร / จำนวนวัน — แก้ไขแล้วกดบันทึก หน้าเว็บจะอัปเดตทันที</p>
+<div class="space-y-3" id="fundPackagesList"></div>
+<div class="flex gap-3 mt-4">
+<button class="btn-primary" onclick="addFundPackageRow()"><i class="fas fa-plus"></i> <span data-i18n="btnAddPkg">เพิ่มแพ็คเกจ</span></button>
+<button class="btn-success" onclick="saveFundPackages()"><i class="fas fa-save"></i> <span data-i18n="btnSaveFundPkg">บันทึกแพ็คเกจกองทุน</span></button>
+</div>
+</div>
+
+<div class="card">
+<h3 class="font-bold mb-4 text-white"><i class="fas fa-list-check text-yellow-400 mr-2"></i><span data-i18n="fundListCard">รายการลงทุนของสมาชิก</span></h3>
+<div class="overflow-x-auto"><table><thead><tr><th>ID</th><th data-i18n="thMember">สมาชิก</th><th data-i18n="thAmount">จำนวน</th><th data-i18n="thProfitPct">กำไร %</th><th data-i18n="thDuration">ระยะเวลา</th><th data-i18n="thRemain">เวลาคงเหลือ</th><th data-i18n="thStatus">สถานะ</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="fundTable"></tbody></table></div>
+</div>
+</div>
+
+<!-- KYC -->
+<div class="tab-content p-6" id="tab-kyc">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold text-white" id="kycTitle" data-i18n="kyc">ยืนยันตัวตน (KYC)</h2>
+<select id="kycFilter" onchange="loadKycs()" style="width: 150px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved">อนุมัติ</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option></select>
+</div>
+<div class="card"><div class="overflow-x-auto"><table><thead><tr><th data-i18n="thMember">สมาชิก</th><th data-i18n="thFullName">ชื่อ-นามสกุล</th><th data-i18n="thIdCard">เลขบัตร</th><th data-i18n="thStatus">สถานะ</th><th data-i18n="thDocs">เอกสาร</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="kycTable"></tbody></table></div></div>
+</div>
+
+<!-- CHAT -->
+<div class="tab-content p-6" id="tab-chat">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="height: calc(100vh - 140px);">
+<div class="card lg:col-span-1 overflow-hidden flex flex-col"><h3 class="font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-comments text-yellow-400"></i><span data-i18n="chatListCard"> รายชื่อลูกค้า</span></h3><div class="flex-1 overflow-y-auto space-y-2" id="chatUserList"></div></div>
+<div class="card lg:col-span-2 overflow-hidden flex flex-col">
+<div class="flex justify-between items-center mb-4 pb-4 border-b border-[#1a1a1a]">
+<div class="flex items-center gap-3"><div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-lg" id="chatUserAvatar">U</div><div><div class="font-bold text-white" id="chatUserName">เลือกลูกค้า</div><div class="text-xs text-gray-500" id="chatUserPhone">-</div></div></div>
+<button class="btn-danger text-sm" onclick="deleteUserChatHistory()" id="deleteChatBtn" style="display:none;"><i class="fas fa-trash"></i> ลบแชท</button>
+</div>
+<div class="flex-1 overflow-y-auto space-y-3 mb-4 p-2" id="adminChatMessages"></div>
+<div class="flex gap-2 pt-4 border-t border-[#1a1a1a]">
+<button class="bg-[#111] p-3 rounded-xl hover:bg-[#1a1a1a] transition border border-[#333]" onclick="document.getElementById('adminChatImage').click()"><i class="fas fa-image text-gray-400"></i></button>
+<input type="file" id="adminChatImage" accept="image/*" onchange="sendAdminImage()" style="display: none;"/>
+<input class="flex-1" id="adminChatInput" placeholder="พิมพ์ข้อความ..." type="text" onkeypress="if(event.key==='Enter') sendAdminMessage()" style="background: #111 !important;"/>
+<button class="btn-primary" onclick="sendAdminMessage()">ส่ง</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ADMINS -->
+<div class="tab-content p-6" id="tab-admins">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-bold text-white" id="adminsTitle" data-i18n="admins">จัดการผู้ดูแลระบบ</h2>
+<button class="btn-primary" onclick="openModal('addAdminModal')"><i class="fas fa-plus mr-2"></i> เพิ่มผู้ดูแลระบบ</button>
+</div>
+<div class="card"><div class="overflow-x-auto"><table><thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อ</th><th>สิทธิ์</th><th>สร้างเมื่อ</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="adminsTable"></tbody></table></div></div>
+</div>
+
+<!-- P2P SETTINGS -->
+<div class="tab-content p-6" id="tab-p2p">
+<h2 class="text-2xl font-bold mb-6 text-white" id="p2pTitle" data-i18n="p2p">ตั้งค่า P2P</h2>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="card">
+<h3 class="font-bold mb-4 text-white"><i class="fas fa-qrcode text-yellow-400 mr-2"></i><span data-i18n="p2pQrCard">QR Code สำหรับฝากเงิน</span></h3>
+<div class="space-y-4">
+<div class="form-group"><label>อัพโหลด QR Code</label><input type="file" id="p2pQrInput" accept="image/*" onchange="handleP2PQRUpload(this)"/></div>
+<div id="p2pQrPreview" class="hidden mb-4"><img src="" style="max-width: 200px; border-radius: 12px; border: 2px solid #333;"></div>
+<div class="form-group"><label>ที่อยู่ USDT (TRC20)</label><input id="p2pAddress" placeholder="ที่อยู่กระเป๋า USDT" type="text"/></div>
+<div class="form-group"><label data-i18n="lblWithdrawFee">ค่าธรรมเนียมถอน (USDT)</label><input id="p2pWithdrawFee" placeholder="1" type="number" min="0" step="0.01"/></div>
+<div class="form-group"><label data-i18n="lblMinWithdraw">ขั้นต่ำการถอน (USDT)</label><input id="p2pMinWithdraw" placeholder="10" type="number" min="0"/></div>
+<button class="btn-primary w-full" onclick="saveP2PSettings()"><i class="fas fa-save"></i> บันทึกการตั้งค่า P2P</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SETTINGS -->
+<div class="tab-content p-6" id="tab-settings">
+<h2 class="text-2xl font-bold mb-6 text-white" id="settingsTitle" data-i18n="settings">ตั้งค่าเว็บไซต์</h2>
+
+<!-- PACKAGES SETTINGS -->
+<div class="card mb-6">
+<h3 class="font-bold mb-4 text-white"><i class="fas fa-box-open text-yellow-400 mr-2"></i><span data-i18n="pkgCard">ตั้งค่าแพ็คเกจซื้อขาย</span></h3>
+<div class="space-y-4">
+<div id="packagesList" class="space-y-3"></div>
+<div class="flex gap-2">
+<button class="btn-primary" onclick="addPackageRow()"><i class="fas fa-plus"></i> <span data-i18n="btnAddPkg">เพิ่มแพ็คเกจ</span></button>
+<button class="btn-success" onclick="savePackages()"><i class="fas fa-save"></i> <span data-i18n="btnSavePkg">บันทึกแพ็คเกจ</span></button>
+</div>
+</div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="card">
+<h3 class="font-bold mb-4 text-white"><i class="fas fa-image text-yellow-400 mr-2"></i><span data-i18n="logoCard">โลโก้เว็บไซต์</span></h3>
+<div class="space-y-6">
+<div class="border border-[#1a1a1a] rounded-xl p-4">
+<div class="text-sm font-bold text-yellow-400 mb-2">1. โลโก้แถบบน (Header)</div>
+<div class="flex flex-col items-center">
+<img src="" class="mb-3 hidden" id="logoPreview1" style="width:120px;height:40px;object-fit:contain;background:#050505;padding:4px;border-radius:8px;">
+<div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('logoInput1').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteLogo(1)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
+<input type="file" id="logoInput1" accept="image/*" onchange="handleLogoUpload(this, 1)" style="display: none;"/>
+</div>
+</div>
+<div class="border border-[#1a1a1a] rounded-xl p-4">
+<div class="text-sm font-bold text-yellow-400 mb-2">2. โลโก้หน้าแรก (Hero Section)</div>
+<div class="flex flex-col items-center">
+<img src="" class="mb-3 hidden" id="logoPreview2" style="width:120px;height:120px;object-fit:contain;background:linear-gradient(135deg,#fbbf24,#f97316);padding:8px;border-radius:12px;">
+<div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('logoInput2').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteLogo(2)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
+<input type="file" id="logoInput2" accept="image/*" onchange="handleLogoUpload(this, 2)" style="display: none;"/>
+</div>
+</div>
+</div>
+</div>
+<div class="card">
+<h3 class="font-bold mb-4 text-white"><i class="fas fa-coins text-yellow-400 mr-2"></i><span data-i18n="walletCard">ตั้งค่ากระเป๋าเงิน</span></h3>
+<div class="space-y-4">
+<div class="form-group"><label data-i18n="lblWithdrawFee">ค่าธรรมเนียมถอน (USDT)</label><input id="settingsWithdrawFee" placeholder="1" type="number" min="0" step="0.01"/></div>
+<div class="form-group"><label data-i18n="lblMinWithdraw">ขั้นต่ำการถอน (USDT)</label><input id="settingsMinWithdraw" placeholder="10" type="number" min="0"/></div>
+</div>
+</div>
+<div class="card lg:col-span-2">
+<h3 class="font-bold mb-4 text-white"><i class="fas fa-images text-yellow-400 mr-2"></i><span data-i18n="heroCard">ภาพพื้นหลังหน้าแรก (สไลด์ 5 รูป)</span></h3>
+<p class="text-xs text-gray-500 mb-4">รูปที่ 1 จะแทนที่พื้นหลังสีส้ม — เลื่อนขวาเพื่อดูรูปถัดไป (เลื่อนอัตโนมัติ) หากไม่อัพโหลดหรือกดลบ จะกลับเป็นพื้นหลังสีส้มแบบเดิม</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="border border-[#1a1a1a] rounded-xl p-4">
+<div class="text-sm font-bold text-yellow-400 mb-2">รูปที่ 1 (หลัก)</div>
+<div class="flex flex-col items-center">
+<img src="" class="mb-3 hidden" id="heroPreview1" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
+<div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput1').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(1)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
+<input type="file" id="heroInput1" accept="image/*" onchange="handleHeroUpload(this, 1)" style="display: none;"/>
+</div>
+</div>
+<div class="border border-[#1a1a1a] rounded-xl p-4">
+<div class="text-sm font-bold text-yellow-400 mb-2">รูปที่ 2</div>
+<div class="flex flex-col items-center">
+<img src="" class="mb-3 hidden" id="heroPreview2" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
+<div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput2').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(2)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
+<input type="file" id="heroInput2" accept="image/*" onchange="handleHeroUpload(this, 2)" style="display: none;"/>
+</div>
+</div>
+<div class="border border-[#1a1a1a] rounded-xl p-4">
+<div class="text-sm font-bold text-yellow-400 mb-2">รูปที่ 3</div>
+<div class="flex flex-col items-center">
+<img src="" class="mb-3 hidden" id="heroPreview3" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
+<div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput3').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(3)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
+<input type="file" id="heroInput3" accept="image/*" onchange="handleHeroUpload(this, 3)" style="display: none;"/>
+</div>
+</div>
+<div class="border border-[#1a1a1a] rounded-xl p-4">
+<div class="text-sm font-bold text-yellow-400 mb-2">รูปที่ 4</div>
+<div class="flex flex-col items-center">
+<img src="" class="mb-3 hidden" id="heroPreview4" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
+<div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput4').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(4)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
+<input type="file" id="heroInput4" accept="image/*" onchange="handleHeroUpload(this, 4)" style="display: none;"/>
+</div>
+</div>
+<div class="border border-[#1a1a1a] rounded-xl p-4">
+<div class="text-sm font-bold text-yellow-400 mb-2">รูปที่ 5</div>
+<div class="flex flex-col items-center">
+<img src="" class="mb-3 hidden" id="heroPreview5" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
+<div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput5').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(5)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
+<input type="file" id="heroInput5" accept="image/*" onchange="handleHeroUpload(this, 5)" style="display: none;"/>
+</div>
+</div>
+</div>
+</div>
+<div class="card lg:col-span-2">
+<h3 class="font-bold mb-4 text-white"><i class="fas fa-info-circle text-blue-400 mr-2"></i><span data-i18n="siteInfoCard">ข้อมูลเว็บไซต์</span></h3>
+<div class="space-y-4">
+<div class="form-group"><label data-i18n="lblSiteName">ชื่อเว็บไซต์</label><input id="settingsSiteName" placeholder="Binance Gold" type="text"/></div>
+<div class="form-group"><label data-i18n="lblSiteColor">สีชื่อเว็บไซต์</label><input id="settingsSiteColor" type="color" value="#f0b90b" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
+<div class="form-group"><label data-i18n="lblBgColor">สีพื้นหลังเว็บไซต์</label><input id="settingsSiteBgColor" type="color" value="#050505" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
+<div class="form-group"><label data-i18n="lblBgImage">รูปภาพพื้นหลังเว็บไซต์ (ทับสีพื้นหลัง)</label>
+<img src="" class="mb-2 hidden" id="siteBgPreview" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:#111;">
+<div class="flex gap-2"><button class="btn-secondary text-sm" onclick="document.getElementById('siteBgInput').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteSiteBg()"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
+<input type="file" id="siteBgInput" accept="image/*" onchange="handleSiteBgUpload(this)" style="display: none;"/>
+</div>
+<div class="form-group"><label data-i18n="lblWelcome">ข้อความต้อนรับ (หน้าแรก)</label><textarea id="settingsWelcome" placeholder="ข้อความต้อนรับ..."></textarea></div>
+<div class="form-group"><label data-i18n="lblAbout">เกี่ยวกับเรา (About Us)</label><textarea id="settingsAboutUs" placeholder="ข้อความเกี่ยวกับเรา..." rows="8"></textarea></div>
+<button class="btn-primary w-full" onclick="saveSettings()"><i class="fas fa-save"></i> <span data-i18n="btnSaveSettings">บันทึกการตั้งค่า</span></button>
+<div class="form-group"><label>สีปุ่มเริ่มต้นใช้งาน</label><input id="settingsCtaBtnBg" type="color" value="#000000" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
+<div class="form-group"><label>สีตัวหนังสือปุ่มเริ่มต้นใช้งาน</label><input id="settingsCtaBtnText" type="color" value="#ffffff" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
+<button class="btn-primary w-full" onclick="saveCtaColors()"><i class="fas fa-save"></i> บันทึกสีปุ่ม</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ADMIN LOGOUT CONFIRMATION -->
+<div class="admin-logout-confirm" id="adminLogoutConfirm" role="dialog" aria-modal="true" aria-labelledby="adminLogoutConfirmTitle">
+  <div class="admin-logout-card">
+    <div class="admin-logout-icon" aria-hidden="true"><i class="fas fa-question"></i></div>
+    <h2 id="adminLogoutConfirmTitle" data-i18n="logoutConfirm">คุณต้องการออกจากระบบบัญชีของคุณใช่ไหม</h2>
+    <div class="admin-logout-actions">
+      <button type="button" class="admin-logout-cancel" data-i18n="cancel" onclick="closeAdminLogoutConfirm()">ยกเลิก</button>
+      <button type="button" class="admin-logout-confirm" id="adminLogoutConfirmBtn" data-i18n="logout" onclick="confirmAdminLogout()">ออกจากระบบ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal" id="userDetailModal"><div class="modal-content wide"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">ข้อมูลสมาชิก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('userDetailModal')"><i class="fas fa-times"></i></button></div><div id="userDetailContent"></div></div></div>
+<div class="modal" id="editUserModal"><div class="modal-content wide"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขสมาชิก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editUserModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อ-นามสกุล</label><input id="editUserName" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>เบอร์โทรศัพท์</label><input id="editUserPhone" type="tel" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>รหัสผ่าน (เว้นว่างถ้าไม่เปลี่ยน)</label><input id="editUserPassword" type="text" placeholder="••••••" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ยอดเงิน (USDT)</label><input id="editUserBalance" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>VIP Level</label><input id="editUserVip" type="number" min="1" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>KYC สถานะ</label><select id="editUserKyc" style="background:#fbbf24 !important;color:#000 !important;"><option value="none">ยังไม่ยืนยัน</option><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="verified">ยืนยันแล้ว</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option></select></div><div class="form-group"><label>สถานะบัญชี</label><select id="editUserStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="active">ใช้งาน</option><option value="suspended">ระงับ</option><option value="banned">แบน</option></select></div><div class="form-group"><label>หมายเหตุ</label><textarea id="editUserNote" style="background:#fbbf24 !important;color:#000 !important;"></textarea></div><button class="btn-primary w-full" onclick="saveUserEdit()">บันทึกการแก้ไข</button></div></div></div>
+
+<div class="modal" id="userTradeModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-bullseye text-green-400 mr-2"></i><span data-i18n="utsTitle">กำหนดผลการซื้อขาย</span></h3><button class="text-gray-500 hover:text-white" onclick="closeModal('userTradeModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4">
+<div class="text-sm text-gray-400" id="utsUserName">-</div>
+<div class="form-group"><label data-i18n="utsResult">ผลลัพธ์</label><select id="utsResult" style="background:#fbbf24 !important;color:#000 !important;"><option value="random" data-i18n="utsRandom">สุ่ม</option><option value="win" data-i18n="optWin">ชนะ</option><option value="lose" data-i18n="optLose">แพ้</option></select></div>
+<div class="flex gap-3"><button class="btn-primary flex-1" onclick="saveUserTradeSetting()"><i class="fas fa-save"></i> <span data-i18n="btnSaveSettings">บันทึก</span></button><button class="btn-danger" onclick="clearUserTradeSetting()"><i class="fas fa-trash"></i> <span data-i18n="btnClear">ล้าง</span></button></div>
+</div></div></div>
+<div class="modal" id="editDepositModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขรายการฝากเงิน</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editDepositModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>จำนวนเงิน (USDT)</label><input id="editDepositAmount" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>สถานะ</label><select id="editDepositStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved">อนุมัติ</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option></select></div><button class="btn-primary w-full" onclick="saveDepositEdit()">บันทึกการแก้ไข</button></div></div></div>
+<div class="modal" id="editWithdrawModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขรายการถอนเงิน</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editWithdrawModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>จำนวนเงิน (USDT)</label><input id="editWithdrawAmount" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>สถานะ</label><select id="editWithdrawStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved">อนุมัติ</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option><option value="failed" data-i18n="optFailed">ล้มเหลว</option></select></div><div class="form-group"><label>หมายเหตุ</label><textarea id="editWithdrawNote" style="background:#fbbf24 !important;color:#000 !important;"></textarea></div><button class="btn-primary w-full" onclick="saveWithdrawEdit()">บันทึกการแก้ไข</button></div></div></div>
+<div class="modal" id="addAdminModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">เพิ่มผู้ดูแลระบบ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('addAdminModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อผู้ใช้</label><input id="newAdminUsername" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ชื่อ</label><input id="newAdminName" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>รหัสผ่าน</label><input id="newAdminPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ยืนยันรหัสผ่าน</label><input id="newAdminConfirmPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><button class="btn-primary w-full" onclick="addAdmin()">เพิ่มผู้ดูแลระบบ</button></div></div></div>
+<div class="modal" id="depositSlipModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">หลักฐานการโอน (Slip)</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('depositSlipModal')"><i class="fas fa-times"></i></button></div><div class="text-center"><img id="depositSlipImg" src="" class="slip-preview" style="display:none;"><div id="depositSlipNoImg" class="text-gray-500 py-8">ไม่มีรูปสลิป</div></div></div></div>
+<div class="modal" id="kycDetailModal"><div class="modal-content xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">รายละเอียด KYC</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('kycDetailModal')"><i class="fas fa-times"></i></button></div><div id="kycDetailContent"></div></div></div>
+<div class="modal" id="imagePreviewModal"><div class="modal-content" style="max-width:700px;"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">ดูรูปภาพ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('imagePreviewModal')"><i class="fas fa-times"></i></button></div><div class="text-center"><img id="previewImage" src="" style="max-width:100%;border-radius:12px;"></div></div></div>
+<!-- Modal แก้ไขข้อความหน้าแรก (เพิ่มใหม่) -->
+<div class="modal" id="homeTextModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-pen text-yellow-400 mr-2"></i>แก้ไขข้อความหน้าแรก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('homeTextModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อเว็บไซต์</label><input id="homeEditSiteName" type="text" placeholder="Binance Gold" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ข้อความต้อนรับ (หน้าแรก)</label><textarea id="homeEditWelcome" placeholder="ข้อความต้อนรับ..." style="background:#fbbf24 !important;color:#000 !important;"></textarea></div><button class="btn-primary w-full" onclick="saveHomeText()"><i class="fas fa-save"></i> บันทึก</button></div></div></div>
+
+<script>
+
+// ==================== CONFIG & DATA ====================
+const DEFAULT_ADMIN = { id: 'admin_1', name: 'ผู้ดูแลระบบหลัก', role: 'superadmin' };
+let isAdminLoggedIn = false;
+let currentAdmin = null;
+let currentChatUserId = null;
+let selectedTradeId = null;
+let editingDepositId = null;
+let editingWithdrawId = null;
+let editingUserId = null;
+let adminLang = localStorage.getItem('bg_admin_lang') || 'th';
+let lastCounts = { deposits: 0, withdraws: 0, trades: 0, kyc: 0, chat: 0 };
+let autoRefreshInterval = null;
+let pendingNotifications = { deposits: false, withdraws: false, trades: false, kyc: false, chat: false };
+let logoImages = { 1: null, 2: null };
+
+const ADMIN_TRANSLATIONS = {
+th: {
+  dashboard: 'แดชบอร์ด', users: 'จัดการสมาชิก', deposits: 'รายการฝากเงิน', withdraws: 'รายการถอนเงิน', trades: 'จัดการการซื้อขาย', fund: 'จัดการกองทุน', kyc: 'ยืนยันตัวตน (KYC)', chat: 'แชทลูกค้า', admins: 'ผู้ดูแลระบบ', p2p: 'ตั้งค่า P2P', settings: 'ตั้งค่าเว็บไซต์', logout: 'ออกจากระบบ',
+  themeLight: 'โหมดสว่าง', themeDark: 'โหมดมืด', themeAria: 'สลับโหมดสี', logoutConfirm: 'คุณต้องการออกจากระบบบัญชีของคุณใช่ไหม', cancel: 'ยกเลิก', logoutProcessing: 'กำลังออกจากระบบ...',
+  loginSubtitle: 'เข้าสู่ระบบผู้ดูแลระบบ', loginError: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', usernameLabel: 'ชื่อผู้ใช้', usernamePlaceholder: 'กรอกชื่อผู้ใช้', passwordLabel: 'รหัสผ่าน', passwordPlaceholder: 'กรอกรหัสผ่าน', loginBtn: 'เข้าสู่ระบบ', backToSite: 'กลับไปหน้าเว็บไซต์', loginSuccess: 'เข้าสู่ระบบสำเร็จ',
+  thMember: 'สมาชิก', thAmount: 'จำนวน', thStatus: 'สถานะ', thDate: 'วันที่', thManage: 'จัดการ', thType: 'ประเภท', thPhone: 'เบอร์โทร', thBalance: 'ยอดเงิน', thSlip: 'สลิป', thInfo: 'ข้อมูล', thFullName: 'ชื่อ-นามสกุล', thIdCard: 'เลขบัตร', thDocs: 'เอกสาร', thPair: 'คู่เงิน', thPackage: 'แพ็คเกจ', thRemain: 'เวลาคงเหลือ', thResult: 'ผล', thProfitPct: 'กำไร %', thDuration: 'ระยะเวลา',
+  optAll: 'ทั้งหมด', optPending: 'รอผล', optReview: 'รอตรวจสอบ', optWin: 'ชนะ', optLose: 'แพ้', optApproved: 'อนุมัติแล้ว', optRejected: 'ปฏิเสธ', optFailed: 'ล้มเหลว', optActive: 'กำลังลงทุน', optExpired: 'ครบกำหนด รอผล', optFundLose: 'ขาดทุน',
+  dashStats: 'สถิติรวม', balanceCard: 'ยอดเงินในระบบ', dashUsers: 'สมาชิกล่าสุด', dashNotif: 'แจ้งเตือนล่าสุด',
+  fundPkgCard: 'แพ็คเกจกองทุน (แสดงหน้าเว็บ)', fundListCard: 'รายการลงทุนของสมาชิก', autoTradeCard: 'ตั้งค่าผลการซื้อขายอัตโนมัติตามสมาชิก', pkgCard: 'ตั้งค่าแพ็คเกจซื้อขาย', logoCard: 'โลโก้เว็บไซต์', walletCard: 'ตั้งค่ากระเป๋าเงิน', heroCard: 'ภาพพื้นหลังหน้าแรก (สไลด์ 5 รูป)', siteInfoCard: 'ข้อมูลเว็บไซต์', p2pQrCard: 'QR Code สำหรับฝากเงิน', chatListCard: 'รายชื่อลูกค้า',
+  btnSaveSettings: 'บันทึกการตั้งค่า', btnAddPkg: 'เพิ่มแพ็คเกจ', btnSaveFundPkg: 'บันทึกแพ็คเกจกองทุน', btnSavePkg: 'บันทึกแพ็คเกจ', btnUpload: 'อัพโหลด', btnDelete: 'ลบ', btnClear: 'ล้าง',
+  lblSiteName: 'ชื่อเว็บไซต์', lblSiteColor: 'สีชื่อเว็บไซต์', lblWelcome: 'ข้อความต้อนรับ (หน้าแรก)', lblAbout: 'เกี่ยวกับเรา (About Us)', lblWithdrawFee: 'ค่าธรรมเนียมถอน (USDT)', lblMinWithdraw: 'ขั้นต่ำการถอน (USDT)', lblBgColor: 'สีพื้นหลังเว็บไซต์', lblBgImage: 'รูปภาพพื้นหลังเว็บไซต์ (ทับสีพื้นหลัง)', lblSelectUser: 'เลือกสมาชิก', lblAutoResult: 'ผลลัพธ์อัตโนมัติ', lblDelay: 'ดีเลย์ (วินาที)', lblWinRate: 'อัตราชนะสุ่ม (%)',
+  pkgPercent: 'กำไร (%)', pkgMinutes: 'เวลา (นาที)', pkgMinAmount: 'ยอดขั้นต่ำ (USDT)', pkgSaved: 'บันทึกแพ็คเกจสำเร็จ',
+  winTxt: 'ชนะ', loseTxt: 'แพ้', buyBadge: 'ซื้อ', sellBadge: 'ขาย', statusRunning: 'กำลังดำเนินการ', statusExpired: 'ครบกำหนด', statusDone: 'เสร็จสิ้น', noData: 'ไม่มีรายการ',
+  resSet: 'กำหนดผล', resSettledNow: 'ครบเวลาแล้ว ปิดผลทันที', resPreset: 'ตั้งผล', resAutoAt: 'เว็บจะแสดงผลอัตโนมัติเมื่อครบเวลา',
+  searchPh: 'ค้นหา...', bgSaved: 'เปลี่ยนพื้นหลังเว็บไซต์แล้ว', bgDeleted: 'ลบรูปพื้นหลังแล้ว',
+  statUsers: 'สมาชิกทั้งหมด', statDeposits: 'ฝากเงินรออนุมัติ', statWithdraws: 'ถอนเงินรออนุมัติ', statTrades: 'ซื้อขายรอผล',
+  subUsers: 'registered users', subDeposits: 'pending deposits', subWithdraws: 'pending withdrawals', subTrades: 'pending trades',
+  statTotalDeposits: 'ฝากทั้งหมด', statTotalWithdraws: 'ถอนทั้งหมด', statTotalTrades: 'ซื้อขายทั้งหมด', statKycPending: 'KYC รอตรวจสอบ',
+  balTotalUsers: 'ยอดรวมสมาชิก', balApprovedDeposits: 'ยอดฝากอนุมัติ', balApprovedWithdraws: 'ยอดถอนอนุมัติ', noNotif: 'ไม่มีการแจ้งเตือน',
+  utsTitle: 'กำหนดผลการซื้อขาย', utsResult: 'ผลลัพธ์', utsRandom: 'สุ่ม', utsWinRate: 'อัตราชนะสุ่ม (%)', utsDelay: 'ดีเลย์ (วินาที)', utsSaved: 'บันทึกการกำหนดผลสำเร็จ', utsCleared: 'ล้างการกำหนดผลแล้ว'
+},
+en: {
+  dashboard: 'Dashboard', users: 'Users', deposits: 'Deposits', withdraws: 'Withdrawals', trades: 'Trades', fund: 'Fund', kyc: 'KYC', chat: 'Chat', admins: 'Admins', p2p: 'P2P Settings', settings: 'Settings', logout: 'Logout',
+  themeLight: 'Light Mode', themeDark: 'Dark Mode', themeAria: 'Toggle theme', logoutConfirm: 'Do you want to log out of your account?', cancel: 'Cancel', logoutProcessing: 'Logging out...',
+  loginSubtitle: 'Admin Login', loginError: 'Invalid username or password', usernameLabel: 'Username', usernamePlaceholder: 'Enter username', passwordLabel: 'Password', passwordPlaceholder: 'Enter password', loginBtn: 'Login', backToSite: 'Back to website', loginSuccess: 'Login successful',
+  thMember: 'Member', thAmount: 'Amount', thStatus: 'Status', thDate: 'Date', thManage: 'Manage', thType: 'Type', thPhone: 'Phone', thBalance: 'Balance', thSlip: 'Slip', thInfo: 'Info', thFullName: 'Full Name', thIdCard: 'ID Number', thDocs: 'Documents', thPair: 'Pair', thPackage: 'Package', thRemain: 'Remaining', thResult: 'Result', thProfitPct: 'Profit %', thDuration: 'Duration',
+  optAll: 'All', optPending: 'Pending', optReview: 'Reviewing', optWin: 'Win', optLose: 'Lose', optApproved: 'Approved', optRejected: 'Rejected', optFailed: 'Failed', optActive: 'Active', optExpired: 'Expired', optFundLose: 'Loss',
+  dashStats: 'Overview', balanceCard: 'System Balance', dashUsers: 'Recent Members', dashNotif: 'Recent Notifications',
+  fundPkgCard: 'Fund Packages (shown on site)', fundListCard: 'Member Investments', autoTradeCard: 'Auto Trade Result per Member', pkgCard: 'Trade Packages', logoCard: 'Website Logo', walletCard: 'Wallet Settings', heroCard: 'Home Slider (5 images)', siteInfoCard: 'Website Info', p2pQrCard: 'Deposit QR Code', chatListCard: 'Customers',
+  btnSaveSettings: 'Save Settings', btnAddPkg: 'Add Package', btnSaveFundPkg: 'Save Fund Packages', btnSavePkg: 'Save Packages', btnUpload: 'Upload', btnDelete: 'Delete', btnClear: 'Clear',
+  lblSiteName: 'Site Name', lblSiteColor: 'Site Name Color', lblWelcome: 'Welcome Text (Home)', lblAbout: 'About Us', lblWithdrawFee: 'Withdraw Fee (USDT)', lblMinWithdraw: 'Min Withdraw (USDT)', lblBgColor: 'Website Background Color', lblBgImage: 'Website Background Image (overrides color)', lblSelectUser: 'Select Member', lblAutoResult: 'Auto Result', lblDelay: 'Delay (seconds)', lblWinRate: 'Random Win Rate (%)',
+  pkgPercent: 'Profit (%)', pkgMinutes: 'Time (minutes)', pkgMinAmount: 'Min Amount (USDT)', pkgSaved: 'Packages saved',
+  winTxt: 'Win', loseTxt: 'Lose', buyBadge: 'Buy', sellBadge: 'Sell', statusRunning: 'In Progress', statusExpired: 'Expired', statusDone: 'Done', noData: 'No data',
+  resSet: 'Result set', resSettledNow: 'Time up — settled immediately', resPreset: 'Preset', resAutoAt: 'Site will show the result automatically when time completes',
+  searchPh: 'Search...', bgSaved: 'Website background updated', bgDeleted: 'Background image removed',
+  statUsers: 'Total Members', statDeposits: 'Pending Deposits', statWithdraws: 'Pending Withdrawals', statTrades: 'Pending Trades',
+  subUsers: 'registered users', subDeposits: 'pending deposits', subWithdraws: 'pending withdrawals', subTrades: 'pending trades',
+  statTotalDeposits: 'Total Deposits', statTotalWithdraws: 'Total Withdrawals', statTotalTrades: 'Total Trades', statKycPending: 'Pending KYC',
+  balTotalUsers: 'Members Balance', balApprovedDeposits: 'Approved Deposits', balApprovedWithdraws: 'Approved Withdrawals', noNotif: 'No notifications',
+  utsTitle: 'Set Trade Result', utsResult: 'Result', utsRandom: 'Random', utsWinRate: 'Random Win Rate (%)', utsDelay: 'Delay (seconds)', utsSaved: 'Trade result setting saved', utsCleared: 'Trade result setting cleared'
+},
+zh: {
+  dashboard: '仪表盘', users: '会员管理', deposits: '充值记录', withdraws: '提现记录', trades: '交易管理', fund: '基金管理', kyc: '身份认证 (KYC)', chat: '客户聊天', admins: '管理员', p2p: 'P2P 设置', settings: '网站设置', logout: '退出登录',
+  themeLight: '浅色模式', themeDark: '深色模式', themeAria: '切换主题', logoutConfirm: '您确定要退出您的账户吗？', cancel: '取消', logoutProcessing: '正在退出登录...',
+  loginSubtitle: '管理员登录', loginError: '用户名或密码不正确', usernameLabel: '用户名', usernamePlaceholder: '请输入用户名', passwordLabel: '密码', passwordPlaceholder: '请输入密码', loginBtn: '登录', backToSite: '返回网站', loginSuccess: '登录成功',
+  thMember: '会员', thAmount: '金额', thStatus: '状态', thDate: '日期', thManage: '管理', thType: '类型', thPhone: '电话', thBalance: '余额', thSlip: '凭证', thInfo: '信息', thFullName: '姓名', thIdCard: '证件号', thDocs: '文件', thPair: '交易对', thPackage: '套餐', thRemain: '剩余时间', thResult: '结果', thProfitPct: '利润 %', thDuration: '期限',
+  optAll: '全部', optPending: '待结果', optReview: '待审核', optWin: '赢', optLose: '输', optApproved: '已批准', optRejected: '已拒绝', optFailed: '失败', optActive: '投资中', optExpired: '已到期', optFundLose: '亏损',
+  dashStats: '统计概览', balanceCard: '系统余额', dashUsers: '最新会员', dashNotif: '最新通知',
+  fundPkgCard: '基金套餐（显示在网站）', fundListCard: '会员投资记录', autoTradeCard: '按会员设置自动交易结果', pkgCard: '交易套餐设置', logoCard: '网站标志', walletCard: '钱包设置', heroCard: '首页轮播图（5张）', siteInfoCard: '网站信息', p2pQrCard: '充值二维码', chatListCard: '客户列表',
+  btnSaveSettings: '保存设置', btnAddPkg: '添加套餐', btnSaveFundPkg: '保存基金套餐', btnSavePkg: '保存套餐', btnUpload: '上传', btnDelete: '删除', btnClear: '清除',
+  lblSiteName: '网站名称', lblSiteColor: '网站名称颜色', lblWelcome: '欢迎文字（首页）', lblAbout: '关于我们', lblWithdrawFee: '提现手续费 (USDT)', lblMinWithdraw: '最低提现 (USDT)', lblBgColor: '网站背景颜色', lblBgImage: '网站背景图片（覆盖颜色）', lblSelectUser: '选择会员', lblAutoResult: '自动结果', lblDelay: '延迟（秒）', lblWinRate: '随机胜率 (%)',
+  pkgPercent: '利润 (%)', pkgMinutes: '时间（分钟）', pkgMinAmount: '最低金额 (USDT)', pkgSaved: '套餐已保存',
+  winTxt: '赢', loseTxt: '输', buyBadge: '买入', sellBadge: '卖出', statusRunning: '进行中', statusExpired: '已到期', statusDone: '已完成', noData: '暂无数据',
+  resSet: '已设定结果', resSettledNow: '时间已到，立即结算', resPreset: '预设结果', resAutoAt: '时间到后网站将自动显示结果',
+  searchPh: '搜索...', bgSaved: '网站背景已更新', bgDeleted: '背景图片已删除',
+  statUsers: '会员总数', statDeposits: '待审核充值', statWithdraws: '待审核提现', statTrades: '待处理交易',
+  subUsers: 'registered users', subDeposits: 'pending deposits', subWithdraws: 'pending withdrawals', subTrades: 'pending trades',
+  statTotalDeposits: '充值总额', statTotalWithdraws: '提现总额', statTotalTrades: '交易总数', statKycPending: '待审核 KYC',
+  balTotalUsers: '会员总余额', balApprovedDeposits: '已批准充值', balApprovedWithdraws: '已批准提现', noNotif: '暂无通知',
+  utsTitle: '设置交易结果', utsResult: '结果', utsRandom: '随机', utsWinRate: '随机胜率 (%)', utsDelay: '延迟（秒）', utsSaved: '交易结果设置已保存', utsCleared: '交易结果设置已清除'
+}
+};
+
+function tAdmin(key) { return ADMIN_TRANSLATIONS[adminLang][key] || key; }
+
+async function initAdminData() {
+  try { const s=await DB.getSettings(); const sn=s.siteName||'Binance Gold';
+    const a=document.getElementById('adminLoginSiteName'), b=document.getElementById('adminSidebarSiteName');
+    if(a)a.textContent=sn; if(b)b.textContent=sn; if(s.siteTitleColor&&a)a.style.color=s.siteTitleColor;
+  } catch(e) { console.error(e); }
+}
+
+function toggleAdminLangMenu(e) {
+  if (e) e.stopPropagation();
+  const m = document.getElementById('adminLangMenu');
+  if (m) m.style.display = (m.style.display === 'none' || !m.style.display) ? 'flex' : 'none';
+}
+document.addEventListener('click', function(e) {
+  const m = document.getElementById('adminLangMenu');
+  if (m && m.style.display !== 'none' && !e.target.closest('.lang-switcher')) m.style.display = 'none';
+});
+
+function setAdminLang(lang) {
+  adminLang = lang; localStorage.setItem('bg_admin_lang', lang);
+  document.querySelectorAll('.admin-lang-opt').forEach(b => b.classList.remove('active'));
+  const optBtn = document.getElementById('lang' + lang.charAt(0).toUpperCase() + lang.slice(1));
+  if (optBtn) optBtn.classList.add('active');
+  // sync ธงบนปุ่มหลัก
+  const flags = { th: '🇹🇭', en: '🇬🇧', zh: '🇨🇳' };
+  const codes = { th: 'TH', en: 'EN', zh: '中文' };
+  const f = document.getElementById('adminLangFlag'); const c = document.getElementById('adminLangCode');
+  if (f) f.textContent = flags[lang] || '🇹🇭';
+  if (c) c.textContent = codes[lang] || 'TH';
+  const m = document.getElementById('adminLangMenu'); if (m) m.style.display = 'none';
+  updateAdminLanguage();
+}
+
+function updateAdminLanguage() {
+  const titles = { dashboard: tAdmin('dashboard'), users: tAdmin('users'), deposits: tAdmin('deposits'), withdraws: tAdmin('withdraws'), trades: tAdmin('trades'), fund: tAdmin('fund'), kyc: tAdmin('kyc'), chat: tAdmin('chat'), admins: tAdmin('admins'), p2p: tAdmin('p2p'), settings: tAdmin('settings') };
+  Object.keys(titles).forEach(k => { const el = document.getElementById('menu' + k.charAt(0).toUpperCase() + k.slice(1)); if (el) el.textContent = titles[k]; });
+  document.getElementById('menuLogout').textContent = tAdmin('logout');
+  const themeLabel = document.getElementById('adminThemeLabel');
+  const themeIcon = document.getElementById('adminThemeIcon');
+  const themeMode = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  if (themeLabel) themeLabel.textContent = tAdmin(themeMode === 'light' ? 'themeLight' : 'themeDark');
+  const themeToggle = document.getElementById('adminThemeToggle');
+  if (themeToggle) themeToggle.setAttribute('aria-label', tAdmin('themeAria'));
+  const dashMap = { statUsersLabel: 'statUsers', statPendingDepositsLabel: 'statDeposits', statPendingWithdrawsLabel: 'statWithdraws', statPendingTradesLabel: 'statTrades', subUsersLabel: 'subUsers', subDepositsLabel: 'subDeposits', subWithdrawsLabel: 'subWithdraws', subTradesLabel: 'subTrades', statTotalDepositsLabel: 'statTotalDeposits', statTotalWithdrawsLabel: 'statTotalWithdraws', statTotalTradesLabel: 'statTotalTrades', statKycPendingLabel: 'statKycPending', balTotalUsersLabel: 'balTotalUsers', balApprovedDepositsLabel: 'balApprovedDeposits', balApprovedWithdrawsLabel: 'balApprovedWithdraws' };
+  Object.keys(dashMap).forEach(id => { const el = document.getElementById(id); if (el) el.textContent = tAdmin(dashMap[id]); });
+  // sync ปุ่มธงสลับภาษาให้ตรงกับภาษาปัจจุบัน
+  document.querySelectorAll('.admin-lang-opt').forEach(b => b.classList.remove('active'));
+  const langBtn = document.getElementById('lang' + adminLang.charAt(0).toUpperCase() + adminLang.slice(1));
+  if (langBtn) langBtn.classList.add('active');
+  const _flags = { th: '🇹🇭', en: '🇬🇧', zh: '🇨🇳' }; const _codes = { th: 'TH', en: 'EN', zh: '中文' };
+  const _f = document.getElementById('adminLangFlag'); const _c = document.getElementById('adminLangCode');
+  if (_f) _f.textContent = _flags[adminLang] || '🇹🇭';
+  if (_c) _c.textContent = _codes[adminLang] || 'TH';
+  // แปลข้อความ static ทั้งหมดที่ติด data-i18n (เก็บไอคอน/element ลูกไว้)
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const txt = tAdmin(key);
+    if (!txt || txt === key) return;
+    const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === 3 && n.textContent.trim());
+    if (el.children.length === 0) { el.textContent = txt; return; }
+    if (textNodes.length > 0) { textNodes[textNodes.length - 1].textContent = ' ' + txt; }
+    else { el.appendChild(document.createTextNode(' ' + txt)); }
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = tAdmin(el.getAttribute('data-i18n-ph')); });
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) { const textNodes = Array.from(loginBtn.childNodes).filter(n => n.nodeType === 3 && n.textContent.trim()); if (textNodes.length) textNodes[textNodes.length - 1].textContent = ' ' + tAdmin('loginBtn'); }
+  const activeTab = document.querySelector('.tab-content.active');
+  if (activeTab) { const tabId = activeTab.id.replace('tab-', ''); document.getElementById('pageTitle').textContent = titles[tabId] || tabId; }
+}
+
+function showToast(message, type, duration) {
+  type = type || 'normal'; duration = duration || 3000;
+  var toast = document.getElementById('toast');
+  toast.textContent = message; toast.className = 'toast show ' + (type === 'alert' ? 'alert' : type === 'success' ? 'success' : '');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+function playNotificationSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 1200; gain.gain.value = 0.3; osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+    setTimeout(() => {
+      const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
+      osc2.connect(gain2); gain2.connect(ctx.destination);
+      osc2.frequency.value = 1600; gain2.gain.value = 0.3; osc2.start();
+      osc2.stop(ctx.currentTime + 0.2);
+    }, 120);
+  } catch(e) {}
+}
+
+async function doLogin() {
+  const usernameEl = document.getElementById('loginUsername');
+  const passwordEl = document.getElementById('loginPassword');
+  const errorEl = document.getElementById('loginError');
+  if (!usernameEl || !passwordEl) return;
+  const username = usernameEl.value.trim();
+  const password = passwordEl.value;
+  if (errorEl) errorEl.classList.remove('show');
+  if (!username || !password) {
+    if (errorEl) errorEl.classList.add('show');
+    return;
+  }
+  try {
+    // Production authentication: always use the server API.
+    // Never authenticate Admin against localStorage, LocalDB, Supabase plaintext
+    // fields, or credentials embedded in the browser.
+    const response = await fetch('/api/admin/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok || !data.admin) {
+      throw new Error(data.error || 'invalid credentials');
+    }
+    isAdminLoggedIn = true;
+    currentAdmin = data.admin;
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('adminPanel').classList.add('show');
+    document.getElementById('adminDisplayName').textContent = data.admin.name || data.admin.username;
+    showToast(tAdmin('loginSuccess'), 'success');
+    await loadDashboard();
+    startAutoRefresh();
+    updateAdminLanguage();
+    applyAdminRoleRestrictions();
+  } catch (e) {
+    console.error('Admin login failed:', e);
+    if (errorEl) errorEl.classList.add('show');
+  }
+}
+
+function logoutAdmin() {
+  const m=document.getElementById('adminLogoutConfirm');
+  if(m) m.classList.add('active');
+}
+function closeAdminLogoutConfirm(){
+  const m=document.getElementById('adminLogoutConfirm');
+  if(m) m.classList.remove('active');
+}
+async function confirmAdminLogout(){
+  const btn=document.getElementById('adminLogoutConfirmBtn');
+  if(btn){btn.disabled=true;btn.textContent=tAdmin('logoutProcessing');}
+  try {
+    const r=await fetch('/api/admin/logout',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'}});
+    if(!r.ok) throw new Error('logout failed');
+  } catch(e) { console.warn('Admin logout request failed',e); }
+  finally {
+    isAdminLoggedIn=false; currentAdmin=null;
+    if(autoRefreshInterval) clearInterval(autoRefreshInterval);
+    window.location.reload();
+  }
+}
+function setAdminTheme(mode){
+  mode = mode === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme',mode);
+  try{localStorage.setItem('bg_theme',mode);}catch(e){}
+  const icon=document.getElementById('adminThemeIcon');
+  const label=document.getElementById('adminThemeLabel');
+  if(icon) icon.className=mode==='light'?'fas fa-sun':'fas fa-moon';
+  if(label) label.textContent=mode==='light'?'โหมดสว่าง':'โหมดมืด';
+}
+function toggleAdminTheme(){
+  const next=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+  setAdminTheme(next);
+}
+
+
+async function checkAdminAuth() {
+  try {
+    const response = await fetch('/api/admin/me', { credentials: 'include' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok || !data.admin) throw new Error('not authenticated');
+    isAdminLoggedIn = true;
+    currentAdmin = data.admin;
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('adminPanel').classList.add('show');
+    document.getElementById('adminDisplayName').textContent = data.admin.name || data.admin.username;
+    await loadDashboard();
+    startAutoRefresh();
+    updateAdminLanguage();
+    applyAdminRoleRestrictions();
+  } catch (e) {
+    isAdminLoggedIn = false;
+    currentAdmin = null;
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('adminPanel').classList.remove('show');
+  }
+}
+
+// จำกัดสิทธิ์: ผู้ดูแลระบบที่ถูกเพิ่ม (ไม่ใช่ superadmin) ไม่เห็นเมนู ผู้ดูแลระบบ / ตั้งค่า P2P / ตั้งค่าเว็บไซต์
+function applyAdminRoleRestrictions() {
+  const isSuper = !currentAdmin || currentAdmin.role === 'superadmin';
+  ['menuAdmins', 'menuP2P', 'menuSettings'].forEach(id => {
+    const span = document.getElementById(id);
+    const item = span ? span.closest('.sidebar-item') : null;
+    if (item) item.style.display = isSuper ? '' : 'none';
+  });
+}
+
+function showAdminTab(tabId, element) {
+  // guard สิทธิ์ sub-admin
+  if (currentAdmin && currentAdmin.role !== 'superadmin' && ['admins', 'p2p', 'settings'].includes(tabId)) {
+    tabId = 'dashboard';
+    element = document.querySelector('.sidebar-item');
+  }
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  if (element) element.classList.add('active');
+  const titles = { dashboard: tAdmin('dashboard'), users: tAdmin('users'), deposits: tAdmin('deposits'), withdraws: tAdmin('withdraws'), trades: tAdmin('trades'), fund: tAdmin('fund'), kyc: tAdmin('kyc'), chat: tAdmin('chat'), admins: tAdmin('admins'), p2p: tAdmin('p2p'), settings: tAdmin('settings') };
+  document.getElementById('pageTitle').textContent = titles[tabId] || tabId;
+  if (tabId === 'dashboard') loadDashboard(); 
+  if (tabId === 'users') loadUsers(); 
+  if (tabId === 'deposits') loadDeposits();
+  if (tabId === 'withdraws') loadWithdraws(); 
+  if (tabId === 'trades') loadTrades(); 
+  if (tabId === 'fund') { loadFundPackagesAdmin(); loadFundInvestments(); }
+  if (tabId === 'kyc') loadKycs();
+  if (tabId === 'chat') loadChatUsers(); 
+  if (tabId === 'admins') loadAdmins(); 
+  if (tabId === 'p2p') loadP2PSettings(); 
+  if (tabId === 'settings') { loadSettings(); loadPackages(); loadAutoTradeUserList(); loadHeroImages(); }
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+
+// ===== แก้ไขข้อความหน้าแรก (เพิ่มใหม่) =====
+async function openHomeTextEditor() {
+  const s = await DB.getSettings();
+  document.getElementById('homeEditSiteName').value = s.siteName || s.site_name || '';
+  document.getElementById('homeEditWelcome').value = s.welcomeText || s.welcome_text || '';
+  openModal('homeTextModal');
+}
+async function saveHomeText() {
+  const siteName = document.getElementById('homeEditSiteName').value;
+  const welcomeText = document.getElementById('homeEditWelcome').value;
+  await DB.updateSettings({ siteName: siteName, welcomeText: welcomeText, site_name: siteName, welcome_text: welcomeText });
+  var sidebarName = document.getElementById('adminSidebarSiteName');
+  if (sidebarName) sidebarName.textContent = siteName || 'Binance Gold';
+  closeModal('homeTextModal');
+  showToast('บันทึกข้อความหน้าแรกสำเร็จ', 'success');
+}
+
+function startAutoRefresh() {
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(() => {
+    updateBadges();
+    processAutoTrades();
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab) {
+      const tabId = activeTab.id.replace('tab-', '');
+      if (tabId === 'dashboard') loadDashboard(); 
+      if (tabId === 'users') loadUsers(); 
+      if (tabId === 'deposits') loadDeposits();
+      if (tabId === 'withdraws') loadWithdraws(); 
+      if (tabId === 'trades') loadTrades(); 
+      if (tabId === 'fund') loadFundInvestments();
+      if (tabId === 'kyc') loadKycs();
+      if (tabId === 'chat') { loadChatUsers(); if (currentChatUserId) loadAdminChatMessages(); }
+    }
+  }, 3000);
+}
+
+async function processAutoTrades() {
+  const all = await DB.getSettings();
+  const settings = all.autoTradeUserSettings || {};
+  const trades = await DB.getTrades();
+  for (const trade of trades.filter(t => t.status === 'pending' && !t.result)) {
+    const userId = trade.user_id || trade.userId;
+    const us = settings[userId];
+    if (!us || !us.result) continue;
+    const delay = (parseInt(us.delay) || 5) * 1000;
+    if (Date.now() - new Date(trade.created_at || trade.createdAt).getTime() < delay) continue;
+    let result = us.result;
+    if (result === 'random') result = Math.random() * 100 < (parseInt(us.winRate)||50) ? 'win' : 'lose';
+    await DB.updateTrade(trade.id, { result, resultSetAt: new Date().toISOString() });
+  }
+  await processDueTradeSettlements();
+}
+
+// ปิดผลเทรดผ่าน Backend เพื่อให้การคืนเงินเป็น atomic transaction
+async function processDueTradeSettlements() {
+  const trades = await DB.getTrades();
+  const now = Date.now();
+  for (const tr of trades) {
+    if (tr.status !== 'pending' || (tr.result !== 'win' && tr.result !== 'lose')) continue;
+    const end = tr.endTime ? new Date(tr.endTime).getTime() : 0;
+    if (!end || end > now) continue;
+    const amount = Number(tr.amount)||0, pct = Number(tr.percent || (tr.package&&tr.package.percent)||0);
+    const profit = tr.result === 'win' ? amount*pct/100 : -amount;
+    try { await BinanceGoldAPI.fetch('/api/admin/trades/'+encodeURIComponent(tr.id)+'/settle',{method:'POST',body:{result:tr.result,profit}}); } catch(e) { console.warn('settlement deferred',e); }
+  }
+}
+
+async function updateBadges() {
+  const deposits = (await DB.getDeposits()).filter(d => d.status === 'pending').length;
+  const withdraws = (await DB.getWithdraws()).filter(w => w.status === 'pending').length;
+  const trades = (await DB.getTrades()).filter(t => t.status === 'pending').length;
+  const funds = (await DB.getFunds()).filter(f => f.status === 'active').length;
+  const kycs = (await DB.getKycs()).filter(k => k.status === 'pending').length;
+  const chats = (await DB.getChats()).filter(c => c.sender === 'user').length;
+
+  document.getElementById('badgeDeposits').textContent = deposits;
+  document.getElementById('badgeWithdraws').textContent = withdraws;
+  document.getElementById('badgeTrades').textContent = trades;
+  const badgeFundEl = document.getElementById('badgeFund');
+  if (badgeFundEl) badgeFundEl.textContent = funds;
+  document.getElementById('badgeKyc').textContent = kycs;
+  document.getElementById('badgeChat').textContent = chats;
+
+  if (deposits > lastCounts.deposits && !pendingNotifications.deposits) { pendingNotifications.deposits = true; playNotificationSound(); }
+  if (withdraws > lastCounts.withdraws && !pendingNotifications.withdraws) { pendingNotifications.withdraws = true; playNotificationSound(); }
+  if (trades > lastCounts.trades && !pendingNotifications.trades) { pendingNotifications.trades = true; playNotificationSound(); }
+  if (kycs > lastCounts.kyc && !pendingNotifications.kyc) { pendingNotifications.kyc = true; playNotificationSound(); }
+  if (chats > lastCounts.chat && !pendingNotifications.chat) { pendingNotifications.chat = true; playNotificationSound(); }
+  lastCounts = { deposits, withdraws, trades, kyc: kycs, chats };
+}
+
+// ==================== DASHBOARD ====================
+async function loadDashboard() {
+  const users = await DB.getUsers();
+  const deposits = await DB.getDeposits();
+  const withdraws = await DB.getWithdraws();
+  const trades = await DB.getTrades();
+  const kycs = await DB.getKycs();
+
+  document.getElementById('statUsers').textContent = users.length;
+  document.getElementById('statPendingDeposits').textContent = deposits.filter(d => d.status === 'pending').length;
+  document.getElementById('statPendingWithdraws').textContent = withdraws.filter(w => w.status === 'pending').length;
+  document.getElementById('statPendingTrades').textContent = trades.filter(t => t.status === 'pending').length;
+
+  document.getElementById('dashTotalDeposits').textContent = deposits.length;
+  document.getElementById('dashTotalWithdraws').textContent = withdraws.length;
+  document.getElementById('dashTotalTrades').textContent = trades.length;
+  document.getElementById('dashTotalKyc').textContent = kycs.filter(k => k.status === 'pending').length;
+
+  const totalBalance = users.reduce((sum, u) => sum + (parseFloat(u.balance) || 0), 0);
+  const approvedDeposits = deposits.filter(d => d.status === 'approved').reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+  const approvedWithdraws = withdraws.filter(w => w.status === 'approved').reduce((sum, w) => sum + (parseFloat(w.amount) || 0), 0);
+  document.getElementById('dashTotalBalance').textContent = '$' + totalBalance.toFixed(2);
+  document.getElementById('dashApprovedDeposits').textContent = '$' + approvedDeposits.toFixed(2);
+  document.getElementById('dashApprovedWithdraws').textContent = '$' + approvedWithdraws.toFixed(2);
+
+  const recentUsers = users.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)).slice(0, 10);
+  document.getElementById('dashboardUsers').innerHTML = recentUsers.map(u => `<div class="flex items-center gap-3 p-3 bg-[#111] rounded-xl cursor-pointer hover:bg-[#1a1a1a] transition" onclick="viewUser('${u.id}')"><div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold">${u.name.charAt(0)}</div><div class="flex-1"><div class="font-bold text-sm text-white">${u.name}</div><div class="text-xs text-gray-500">${u.phone} | VIP${u.vip || 1} | $${(u.balance || 0).toFixed(2)}</div></div><span class="badge badge-${u.kyc_status === 'verified' || u.kycStatus === 'verified' ? 'approved' : 'pending'}">${u.kyc_status || u.kycStatus}</span></div>`).join('') || '<div class="text-center text-gray-500 py-8">ไม่มีสมาชิก</div>';
+
+  let notifications = [];
+  deposits.filter(d => d.status === 'pending').forEach(d => { const u = users.find(x => x.id === d.user_id || x.id === d.userId); notifications.push({ type: 'deposit', text: `ฝากเงิน ${d.amount} USDT - ${u ? u.name : 'Unknown'}`, time: d.created_at || d.createdAt }); });
+  withdraws.filter(w => w.status === 'pending').forEach(w => { const u = users.find(x => x.id === w.user_id || x.id === w.userId); notifications.push({ type: 'withdraw', text: `ถอนเงิน ${w.amount} USDT - ${u ? u.name : 'Unknown'}`, time: w.created_at || w.createdAt }); });
+  trades.filter(t => t.status === 'pending').forEach(t => { const u = users.find(x => x.id === t.user_id || x.id === t.userId); notifications.push({ type: 'trade', text: `ซื้อขาย ${t.symbol} - ${u ? u.name : 'Unknown'}`, time: t.created_at || t.createdAt }); });
+  kycs.filter(k => k.status === 'pending').forEach(k => { const u = users.find(x => x.id === k.user_id || x.id === k.userId); notifications.push({ type: 'kyc', text: `${tAdmin('statKycPending')} - ${u ? u.name : 'Unknown'}`, time: k.created_at || k.createdAt }); });
+  notifications.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+  document.getElementById('dashboardNotifications').innerHTML = notifications.slice(0, 20).map(n => {
+    const icon = n.type === 'deposit' ? 'fa-arrow-down text-green-400' : n.type === 'withdraw' ? 'fa-arrow-up text-red-400' : n.type === 'trade' ? 'fa-exchange-alt text-blue-400' : 'fa-id-card text-yellow-400';
+    return `<div class="flex items-center gap-3 p-3 bg-[#111] rounded-xl"><div class="w-8 h-8 bg-[#1a1a1a] rounded-full flex items-center justify-center"><i class="fas ${icon}"></i></div><div class="flex-1"><div class="text-sm text-white">${n.text}</div><div class="text-xs text-gray-500">${new Date(n.time).toLocaleString()}</div></div></div>`;
+  }).join('') || `<div class="text-center text-gray-500 py-8">${tAdmin('noNotif')}</div>`;
+}
+
+// ==================== USERS ====================
+async function loadUsers() {
+  const users = await DB.getUsers();
+  document.getElementById('usersTable').innerHTML = users.map(u => {
+    const kyc = u.kyc_status || u.kycStatus || 'none';
+    const kycClass = kyc === 'verified' ? 'approved' : kyc === 'pending' ? 'pending' : 'rejected';
+    const status = u.status || 'active';
+    const statusClass = status === 'active' ? 'approved' : status === 'suspended' ? 'pending' : 'rejected';
+    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div><div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="text-center text-gray-500 py-8">ไม่มีสมาชิก</td></tr>';
+}
+
+async function searchUsers() {
+  const query = document.getElementById('userSearch').value.toLowerCase();
+  const users = await DB.getUsers(query);
+  document.getElementById('usersTable').innerHTML = users.map(u => {
+    const kyc = u.kyc_status || u.kycStatus || 'none';
+    const kycClass = kyc === 'verified' ? 'approved' : kyc === 'pending' ? 'pending' : 'rejected';
+    const status = u.status || 'active';
+    const statusClass = status === 'active' ? 'approved' : status === 'suspended' ? 'pending' : 'rejected';
+    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div><div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="text-center text-gray-500 py-8">ไม่พบสมาชิก</td></tr>';
+}
+
+async function viewUser(userId) {
+  const user = (await DB.getUsers()).find(u => u.id === userId); if (!user) return;
+  const deposits = (await DB.getDeposits()).filter(d => d.user_id === userId || d.userId === userId);
+  const withdraws = (await DB.getWithdraws()).filter(w => w.user_id === userId || w.userId === userId);
+  const trades = (await DB.getTrades()).filter(t => t.user_id === userId || t.userId === userId);
+  document.getElementById('userDetailContent').innerHTML = `<div class="flex items-center gap-4 mb-6"><div class="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center text-black text-2xl font-bold">${user.name.charAt(0)}</div><div><div class="text-xl font-bold text-white">${user.name}</div><div class="text-gray-400">${user.phone}</div></div></div><div class="grid grid-cols-3 gap-4 mb-6"><div class="bg-[#111] p-4 rounded-xl text-center"><div class="text-2xl font-bold text-white">$${(user.balance || 0).toFixed(2)}</div><div class="text-xs text-gray-500">ยอดเงิน</div></div><div class="bg-[#111] p-4 rounded-xl text-center"><div class="text-2xl font-bold text-white">${deposits.length}</div><div class="text-xs text-gray-500">การฝาก</div></div><div class="bg-[#111] p-4 rounded-xl text-center"><div class="text-2xl font-bold text-white">${trades.length}</div><div class="text-xs text-gray-500">การซื้อขาย</div></div></div><div class="space-y-2 mb-4"><div class="detail-row"><span class="detail-label">สถานะ:</span><span class="badge badge-${user.status === 'active' ? 'approved' : user.status === 'suspended' ? 'pending' : 'rejected'}">${user.status || 'active'}</span></div><div class="detail-row"><span class="detail-label">VIP:</span><span class="detail-value">VIP ${user.vip || 1}</span></div><div class="detail-row"><span class="detail-label">KYC:</span><span class="badge badge-${user.kyc_status === 'verified' || user.kycStatus === 'verified' ? 'approved' : 'pending'}">${user.kyc_status || user.kycStatus}</span></div><div class="detail-row"><span class="detail-label">สมัครเมื่อ:</span><span class="detail-value">${new Date(user.created_at || user.createdAt).toLocaleString()}</span></div></div>`;
+  openModal('userDetailModal');
+}
+
+async function editUser(userId) {
+  editingUserId = userId; const user = (await DB.getUsers()).find(u => u.id === userId);
+  if (!user) return;
+  document.getElementById('editUserName').value = user.name || '';
+  document.getElementById('editUserPhone').value = user.phone || '';
+  document.getElementById('editUserBalance').value = user.balance || 0;
+  document.getElementById('editUserVip').value = user.vip || 1;
+  document.getElementById('editUserKyc').value = user.kyc_status || user.kycStatus || 'none';
+  document.getElementById('editUserStatus').value = user.status || 'active';
+  document.getElementById('editUserNote').value = user.note || '';
+  document.getElementById('editUserPassword').value = '';
+  openModal('editUserModal');
+}
+
+async function saveUserEdit() {
+  const updates = { 
+    name: document.getElementById('editUserName').value.trim(),
+    phone: document.getElementById('editUserPhone').value.trim(),
+    balance: parseFloat(document.getElementById('editUserBalance').value) || 0,
+    vip: parseInt(document.getElementById('editUserVip').value) || 1,
+    kyc_status: document.getElementById('editUserKyc').value,
+    kycStatus: document.getElementById('editUserKyc').value,
+    status: document.getElementById('editUserStatus').value,
+    note: document.getElementById('editUserNote').value
+  };
+  const newPass = document.getElementById('editUserPassword').value.trim();
+  if (newPass) updates.password = newPass;
+  await DB.updateUser(editingUserId, updates);
+  showToast('แก้ไขสมาชิกสำเร็จ', 'success'); closeModal('editUserModal'); loadUsers(); loadDashboard();
+}
+
+// ==================== PER-USER TRADE RESULT (ปุ่ม 🎯 ในตารางสมาชิก) ====================
+let utsUserId = null;
+
+async function openUserTradeSetting(userId) {
+  utsUserId = userId;
+  const user = (await DB.getUsers()).find(u => u.id === userId);
+  if (!user) return;
+  document.getElementById('utsUserName').textContent = user.name + ' (' + user.phone + ')';
+  const all = await DB.getSettings(); const settings = all.autoTradeUserSettings || {};
+  const s = settings[userId];
+  document.getElementById('utsResult').value = s ? (s.result || 'random') : 'random';
+  openModal('userTradeModal');
+}
+
+async function saveUserTradeSetting() {
+  if (!utsUserId) return;
+  const all = await DB.getSettings(); const settings = all.autoTradeUserSettings || {};
+  settings[utsUserId] = {
+    result: document.getElementById('utsResult').value,
+    winRate: 50,
+    delay: 0
+  };
+  await DB.updateSettings({ autoTradeUserSettings: settings });
+  showToast(tAdmin('utsSaved'), 'success');
+  closeModal('userTradeModal');
+  loadAutoTradeUserList();
+}
+
+async function clearUserTradeSetting() {
+  if (!utsUserId) return;
+  const all = await DB.getSettings(); const settings = all.autoTradeUserSettings || {};
+  delete settings[utsUserId];
+  await DB.updateSettings({ autoTradeUserSettings: settings });
+  showToast(tAdmin('utsCleared'), 'success');
+  closeModal('userTradeModal');
+  loadAutoTradeUserList();
+}
+
+async function deleteUser(userId) {
+  if (!confirm('ต้องการปิดใช้งานสมาชิกนี้?')) return;
+  try { await DB.updateUser(userId,{status:'disabled'}); showToast('ปิดใช้งานสมาชิกสำเร็จ','success'); loadUsers(); loadDashboard(); }
+  catch(e) { showToast('ไม่สามารถจัดการสมาชิกได้','alert'); }
+}
+
+// ==================== DEPOSITS ====================
+async function loadDeposits() {
+  const filter = document.getElementById('depositFilter').value;
+  let deposits = await DB.getDeposits(); 
+  if (filter !== 'all') deposits = deposits.filter(d => d.status === filter);
+  deposits.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+  const users = await DB.getUsers();
+  document.getElementById('depositsTable').innerHTML = deposits.map(d => {
+    const user = users.find(u => u.id === d.user_id || u.id === d.userId);
+    const slipUrl = d.slip_url || d.slipUrl || '';
+    const hasSlip = slipUrl && (slipUrl.startsWith('data:') || slipUrl.startsWith('http')) ? true : false;
+    const slipPreview = hasSlip ? `<img src="${slipUrl}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid #eab308;" onclick="viewDepositSlip('${slipUrl}')" onerror="this.onerror=null;this.src='';this.alt='ไม่สามารถโหลดรูป';this.style.display='none';this.parentNode.innerHTML='<span class=\'text-xs text-gray-500\'>ไม่มีรูป</span>';">` : '<span class="text-xs text-gray-500">ไม่มีสลิป</span>';
+    return `<tr><td class="font-mono text-xs text-gray-400">${d.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td><span class="badge badge-info bg-blue-500/20 text-blue-400">${d.type || 'deposit'}</span></td><td class="font-bold text-green-400">+${parseFloat(d.amount).toFixed(2)} USDT</td><td>${slipPreview}</td><td><span class="badge badge-${d.status}">${d.status}</span></td><td class="text-xs text-gray-500">${new Date(d.created_at || d.createdAt).toLocaleString()}</td><td><div class="action-btns">${d.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveDeposit('${d.id}')"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectDeposit('${d.id}')"><i class="fas fa-times"></i></button>` : ''}<button class="btn-warning text-xs" onclick="editDeposit('${d.id}')"><i class="fas fa-edit"></i></button></div></td></tr>`;
+  }).join('') || '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่มีรายการ</td></tr>';
+}
+
+function viewDepositSlip(url) {
+  const img = document.getElementById('depositSlipImg');
+  const noImg = document.getElementById('depositSlipNoImg');
+  if (url) {
+    img.src = url; img.style.display = 'inline-block'; noImg.style.display = 'none';
+  } else {
+    img.style.display = 'none'; noImg.style.display = 'block';
+  }
+  openModal('depositSlipModal');
+}
+
+async function approveDeposit(id) {
+  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการฝากสำเร็จ','success'); loadDeposits(); loadDashboard(); }
+  catch(e) { showToast('ไม่สามารถอนุมัติรายการได้','alert'); }
+}
+
+async function rejectDeposit(id) {
+  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); showToast('ปฏิเสธการฝาก','alert'); loadDeposits(); loadDashboard(); }
+  catch(e) { showToast('ไม่สามารถปฏิเสธรายการได้','alert'); }
+}
+
+async function editDeposit(id) { 
+  editingDepositId = id; const d = (await DB.getDeposits()).find(x => x.id === id); 
+  if (!d) return; document.getElementById('editDepositAmount').value = d.amount; 
+  document.getElementById('editDepositStatus').value = d.status; openModal('editDepositModal'); 
+}
+
+async function saveDepositEdit() {
+  const deposit=(await DB.getDeposits()).find(d=>d.id===editingDepositId); if(!deposit)return;
+  const newStatus=document.getElementById('editDepositStatus').value, newAmount=Number(document.getElementById('editDepositAmount').value)||0;
+  if(deposit.status==='approved' && newAmount!==Number(deposit.amount)) { showToast('รายการที่อนุมัติแล้วไม่สามารถแก้จำนวนเงินได้','alert'); return; }
+  try {
+    if(deposit.status==='pending' && newStatus==='approved') await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(editingDepositId)+'/approve',{method:'POST',body:{}});
+    else if(deposit.status==='pending' && newStatus==='rejected') await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(editingDepositId)+'/reject',{method:'POST',body:{}});
+    else if(deposit.status==='pending') await DB.updateDeposit(editingDepositId,{amount:newAmount,status:'pending'});
+    else if(deposit.status!==newStatus) { showToast('ไม่สามารถเปลี่ยนสถานะรายการที่ประมวลผลแล้ว','alert'); return; }
+    showToast('แก้ไขรายการฝากสำเร็จ','success'); closeModal('editDepositModal'); loadDeposits(); loadDashboard();
+  } catch(e) { showToast('ไม่สามารถแก้ไขรายการฝากได้','alert'); }
+}
+
+// ==================== WITHDRAWS ====================
+async function loadWithdraws() {
+  const filter = document.getElementById('withdrawFilter').value;
+  let withdraws = await DB.getWithdraws(); 
+  if (filter !== 'all') withdraws = withdraws.filter(w => w.status === filter);
+  withdraws.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+  const users = await DB.getUsers();
+  document.getElementById('withdrawsTable').innerHTML = withdraws.map(w => {
+    const user = users.find(u => u.id === w.user_id || u.id === w.userId);
+    let info = '-'; 
+    try { 
+      if (w.bank_info || w.bankInfo) { 
+        const b = JSON.parse(w.bank_info || w.bankInfo); 
+        info = `<div class="text-white font-bold text-xs">${b.bank}</div><div class="text-xs text-gray-500">${b.account}</div><div class="text-xs text-gray-400">${b.accountName || ''}</div>`; 
+      } else if (w.address) info = `<span class="font-mono text-xs text-blue-400">${w.address.substring(0, 20)}...</span>`; 
+    } catch(e) { info = w.bank_info || w.bankInfo || w.address || '-'; }
+    return `<tr><td class="font-mono text-xs text-gray-400">${w.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td><span class="badge badge-${w.type === 'p2p' ? 'pending' : 'info'} bg-blue-500/20 text-blue-400">${w.type || 'withdraw'}</span></td><td class="font-bold text-red-400">-${parseFloat(w.amount).toFixed(2)} USDT</td><td class="text-xs">${info}</td><td><span class="badge badge-${w.status}">${w.status}</span></td><td class="text-xs text-gray-500">${new Date(w.created_at || w.createdAt).toLocaleString()}</td><td><div class="action-btns">${w.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveWithdraw('${w.id}')"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectWithdraw('${w.id}')"><i class="fas fa-times"></i></button>` : ''}<button class="btn-warning text-xs" onclick="editWithdraw('${w.id}')"><i class="fas fa-edit"></i></button></div></td></tr>`;
+  }).join('') || '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่มีรายการ</td></tr>';
+}
+
+async function approveWithdraw(id) {
+  try { await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการถอนสำเร็จ','success'); loadWithdraws(); loadDashboard(); }
+  catch(e) { showToast('ไม่สามารถอนุมัติรายการได้','alert'); }
+}
+
+async function rejectWithdraw(id) {
+  try { const out=await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); if(out.user){} showToast('ปฏิเสธการถอน - คืนเงินแล้ว','alert'); loadWithdraws(); loadDashboard(); }
+  catch(e) { showToast('ไม่สามารถปฏิเสธรายการได้','alert'); }
+}
+
+async function editWithdraw(id) { 
+  editingWithdrawId = id; const w = (await DB.getWithdraws()).find(x => x.id === id); 
+  if (!w) return; document.getElementById('editWithdrawAmount').value = w.amount; 
+  document.getElementById('editWithdrawStatus').value = w.status; 
+  document.getElementById('editWithdrawNote').value = w.note || ''; openModal('editWithdrawModal'); 
+}
+
+async function saveWithdrawEdit() {
+  const w=(await DB.getWithdraws()).find(x=>x.id===editingWithdrawId); if(!w)return;
+  const newStatus=document.getElementById('editWithdrawStatus').value, newAmount=Number(document.getElementById('editWithdrawAmount').value)||0;
+  if(w.status!=='pending' && newAmount!==Number(w.amount)) { showToast('รายการที่ประมวลผลแล้วไม่สามารถแก้จำนวนเงินได้','alert'); return; }
+  try {
+    if(w.status==='pending' && newStatus==='approved') await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(editingWithdrawId)+'/approve',{method:'POST',body:{}});
+    else if(w.status==='pending' && newStatus==='rejected') await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(editingWithdrawId)+'/reject',{method:'POST',body:{}});
+    else if(w.status==='pending') await DB.updateWithdraw(editingWithdrawId,{amount:newAmount,status:'pending',note:document.getElementById('editWithdrawNote').value});
+    else if(w.status!==newStatus) { showToast('ไม่สามารถเปลี่ยนสถานะรายการที่ประมวลผลแล้ว','alert'); return; }
+    showToast('แก้ไขรายการถอนสำเร็จ','success'); closeModal('editWithdrawModal'); loadWithdraws(); loadDashboard();
+  } catch(e) { showToast('ไม่สามารถแก้ไขรายการถอนได้','alert'); }
+}
+
+// ==================== TRADES ====================
+async function loadTrades() {
+  await processDueTradeSettlements(); // ปิดผลเทรดที่ครบเวลาและแอดมินตั้งผลไว้แล้ว
+  const filter = document.getElementById('tradeFilter').value;
+  let trades = await DB.getTrades(); 
+  if (filter === 'pending') trades = trades.filter(t => t.status === 'pending');
+  else if (filter === 'win') trades = trades.filter(t => t.status === 'closed' && t.result === 'win');
+  else if (filter === 'lose') trades = trades.filter(t => t.status === 'closed' && t.result === 'lose');
+  trades.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+  const users = await DB.getUsers();
+  const now = Date.now();
+  document.getElementById('tradesTable').innerHTML = trades.map(t => {
+    const user = users.find(u => u.id === t.user_id || u.id === t.userId);
+    const isPending = t.status === 'pending';
+    const preset = isPending && (t.result === 'win' || t.result === 'lose');
+    let resultClass, resultText;
+    if (!isPending) {
+      resultClass = t.result === 'win' ? 'text-green-400' : 'text-red-400';
+      resultText = t.result === 'win' ? `${tAdmin('winTxt')} +${(parseFloat(t.profit) || 0).toFixed(2)}` : `${tAdmin('loseTxt')} ${Math.abs(parseFloat(t.profit) || 0).toFixed(2)}`;
+    } else if (preset) {
+      resultClass = 'text-yellow-400';
+      resultText = `${tAdmin('statusRunning')} → ${t.result === 'win' ? tAdmin('winTxt') : tAdmin('loseTxt')}`;
+    } else {
+      resultClass = 'text-yellow-400';
+      resultText = '⏳ ' + tAdmin('statusRunning');
+    }
+    const pkg = t.package || {};
+    const pkgText = pkg.percent ? `<span class="text-yellow-400">${pkg.percent}% | ${pkg.minutes || '-'}m | $${Number(pkg.amount).toLocaleString()}</span>` : '-';
+    // เวลาคงเหลือ (นับถอยหลังตามแพ็คเกจ)
+    let remainTxt = '-';
+    if (isPending && t.endTime) {
+      const r = new Date(t.endTime).getTime() - now;
+      remainTxt = r > 0 ? `<span class="text-yellow-400 font-bold">${Math.floor(r / 60000)}m ${Math.floor((r % 60000) / 1000)}s</span>` : `<span class="text-orange-400">${tAdmin('statusExpired')}</span>`;
+    }
+    const winStyle = preset && t.result === 'win' ? ' style="box-shadow:0 0 0 2px #22c55e;"' : '';
+    const loseStyle = preset && t.result === 'lose' ? ' style="box-shadow:0 0 0 2px #ef4444;"' : '';
+    return `<tr><td class="font-mono text-xs text-gray-400">${t.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="font-bold text-white">${t.symbol.replace('USDT', '/USDT')}</td><td><span class="badge badge-${t.type === 'buy' ? 'approved' : 'rejected'}">${t.type === 'buy' ? tAdmin('buyBadge') : tAdmin('sellBadge')}</span></td><td class="text-white">$${parseFloat(t.amount).toFixed(2)}</td><td>${pkgText}</td><td>${remainTxt}</td><td class="${resultClass} font-bold">${resultText}</td><td><div class="action-btns">${isPending ? `<button class="btn-success text-xs"${winStyle} onclick="setTradeResultNow('${t.id}', 'win')"><i class="fas fa-trophy"></i> ${tAdmin('winTxt')}</button><button class="btn-danger text-xs"${loseStyle} onclick="setTradeResultNow('${t.id}', 'lose')"><i class="fas fa-times-circle"></i> ${tAdmin('loseTxt')}</button>` : `<span class="text-xs text-gray-500">${tAdmin('statusDone')}</span>`}</div></td></tr>`;
+  }).join('') || `<tr><td colspan="9" class="text-center text-gray-500 py-8">${tAdmin('noData')}</td></tr>`;
+}
+
+// ตั้งผลชนะ/แพ้ล่วงหน้า — เว็บจะแสดงผลอัตโนมัติเมื่อครบเวลาที่กำหนด (ถ้าครบแล้ว ปิดผลทันที)
+async function setTradeResultNow(tradeId, result) {
+  const tr = (await DB.getTrades()).find(x => x.id === tradeId);
+  if (!tr || tr.status !== 'pending') return;
+  await DB.updateTrade(tradeId, { result: result, resultSetAt: new Date().toISOString() });
+  const end = tr.endTime ? new Date(tr.endTime).getTime() : 0;
+  if (Date.now() >= end) {
+    await processDueTradeSettlements();
+    showToast(tAdmin('resSet') + ': ' + (result === 'win' ? tAdmin('winTxt') : tAdmin('loseTxt')) + ' — ' + tAdmin('resSettledNow'), result === 'win' ? 'success' : 'alert');
+  } else {
+    showToast(tAdmin('resPreset') + ' "' + (result === 'win' ? tAdmin('winTxt') : tAdmin('loseTxt')) + '" — ' + tAdmin('resAutoAt'), 'success');
+  }
+  loadTrades(); loadDashboard(); updateBadges();
+}
+
+// ==================== KYC ====================
+async function loadKycs() {
+  const filter = document.getElementById('kycFilter').value;
+  let kycs = await DB.getKycs(); if (filter !== 'all') kycs = kycs.filter(k => k.status === filter);
+  kycs.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+  const users = await DB.getUsers();
+  document.getElementById('kycTable').innerHTML = kycs.map(k => {
+    const user = users.find(u => u.id === k.user_id || u.id === k.userId);
+    const front = k.front_image_url || k.frontImageUrl;
+    const back = k.back_image_url || k.backImageUrl;
+    const selfie = k.selfie_image_url || k.selfieImageUrl;
+    const hasDocs = front || back || selfie;
+    const docCount = (front ? 1 : 0) + (back ? 1 : 0) + (selfie ? 1 : 0);
+    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${user ? (user.name || 'U').charAt(0) : '?'}</div><div><div class="font-bold text-white">${user ? user.name : 'Unknown'}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></div></div></td><td class="text-white">${k.fullName || k.full_name}</td><td class="font-mono text-xs text-gray-400">${k.idNumber || k.id_number}</td><td><span class="badge badge-${k.status}">${k.status}</span></td><td>${hasDocs ? `<button class="btn-secondary text-xs" onclick="viewKycDetail('${k.id}')"><i class="fas fa-images"></i> ดูเอกสาร (${docCount})</button>` : '<span class="text-xs text-gray-500">-</span>'}</td><td><div class="action-btns">${k.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveKyc('${k.id}')"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectKyc('${k.id}')"><i class="fas fa-times"></i></button>` : ''}</div></td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="text-center text-gray-500 py-8">ไม่มีรายการ</td></tr>';
+}
+
+async function viewKycDetail(kycId) {
+  const kyc = (await DB.getKycs()).find(k => k.id === kycId);
+  if (!kyc) return;
+  const user = (await DB.getUsers()).find(u => u.id === kyc.user_id || u.id === kyc.userId);
+  const front = kyc.front_image_url || kyc.frontImageUrl;
+  const back = kyc.back_image_url || kyc.backImageUrl;
+  const selfie = kyc.selfie_image_url || kyc.selfieImageUrl;
+
+  let html = `<div class="mb-4"><div class="detail-row"><span class="detail-label">สมาชิก:</span><span class="detail-value">${user ? user.name : 'Unknown'}</span></div><div class="detail-row"><span class="detail-label">ชื่อ-นามสกุล:</span><span class="detail-value">${kyc.fullName || kyc.full_name}</span></div><div class="detail-row"><span class="detail-label">เลขบัตร:</span><span class="detail-value">${kyc.idNumber || kyc.id_number}</span></div><div class="detail-row"><span class="detail-label">วันเกิด:</span><span class="detail-value">${kyc.dob || '-'}</span></div><div class="detail-row"><span class="detail-label">สถานะ:</span><span class="badge badge-${kyc.status}">${kyc.status}</span></div></div>`;
+
+  html += `<div class="kyc-img-grid">`;
+  if (front) html += `<div class="kyc-img-item" onclick="showImagePreview('${front}')"><img src="${front}" style="width:100%;height:120px;object-fit:cover;" onerror="this.onerror=null;this.src='';this.alt='โหลดรูปไม่สำเร็จ';this.style.display='none';this.parentNode.innerHTML='<div style=\'padding:20px;text-align:center;color:#888\'>ไม่สามารถโหลดรูป</div>';" alt="Front"><div class="kyc-img-label">บัตรด้านหน้า</div></div>`;
+  if (back) html += `<div class="kyc-img-item" onclick="showImagePreview('${back}')"><img src="${back}" style="width:100%;height:120px;object-fit:cover;" onerror="this.onerror=null;this.src='';this.alt='โหลดรูปไม่สำเร็จ';this.style.display='none';this.parentNode.innerHTML='<div style=\'padding:20px;text-align:center;color:#888\'>ไม่สามารถโหลดรูป</div>';" alt="Back"><div class="kyc-img-label">บัตรด้านหลัง</div></div>`;
+  if (selfie) html += `<div class="kyc-img-item" onclick="showImagePreview('${selfie}')"><img src="${selfie}" style="width:100%;height:120px;object-fit:cover;" onerror="this.onerror=null;this.src='';this.alt='โหลดรูปไม่สำเร็จ';this.style.display='none';this.parentNode.innerHTML='<div style=\'padding:20px;text-align:center;color:#888\'>ไม่สามารถโหลดรูป</div>';" alt="Selfie"><div class="kyc-img-label">รูปเซลฟี่</div></div>`;
+  html += `</div>`;
+
+  if (kyc.status === 'pending') {
+    html += `<div class="flex gap-3 mt-4"><button class="btn-success flex-1" onclick="approveKyc('${kyc.id}'); closeModal('kycDetailModal');"><i class="fas fa-check"></i> อนุมัติ</button><button class="btn-danger flex-1" onclick="rejectKyc('${kyc.id}'); closeModal('kycDetailModal');"><i class="fas fa-times"></i> ปฏิเสธ</button></div>`;
+  }
+
+  document.getElementById('kycDetailContent').innerHTML = html;
+  openModal('kycDetailModal');
+}
+
+function showImagePreview(url) {
+  document.getElementById('previewImage').src = url;
+  openModal('imagePreviewModal');
+}
+
+async function approveKyc(id) { 
+  const kyc = (await DB.getKycs()).find(k => k.id === id); 
+  if (!kyc) return; 
+  await DB.updateKyc(id, { status: 'approved' }); 
+  await DB.updateUser(kyc.user_id || kyc.userId, { kycStatus: 'verified', kyc_status: 'verified' });
+  showToast('อนุมัติ KYC สำเร็จ', 'success'); loadKycs(); 
+}
+
+async function rejectKyc(id) { 
+  const kyc = (await DB.getKycs()).find(k => k.id === id); 
+  if (!kyc) return; 
+  await DB.updateKyc(id, { status: 'rejected' }); 
+  await DB.updateUser(kyc.user_id || kyc.userId, { kycStatus: 'rejected', kyc_status: 'rejected' });
+  showToast('ปฏิเสธ KYC', 'alert'); loadKycs(); 
+}
+
+// ==================== CHAT ====================
+async function loadChatUsers() {
+  const users = await DB.getUsers(); 
+  const chats = await DB.getChats();
+  const chatUsers = []; 
+  users.forEach(u => { 
+    const userChats = chats.filter(c => c.user_id === u.id || c.userId === u.id); 
+    if (userChats.length > 0) { 
+      chatUsers.push({ user: u, lastChat: userChats[userChats.length - 1], unread: userChats.filter(c => c.sender === 'user' && !c.read).length }); 
+    } 
+  });
+  chatUsers.sort((a, b) => new Date(b.lastChat.created_at || b.lastChat.createdAt) - new Date(a.lastChat.created_at || a.lastChat.createdAt));
+  document.getElementById('chatUserList').innerHTML = chatUsers.map(c => `<div class="chat-user-item ${c.user.id === currentChatUserId ? 'active' : ''}" onclick="selectChatUser('${c.user.id}')"><div class="chat-user-avatar">${(c.user.name || 'U').charAt(0)}</div><div class="flex-1" style="min-width:0;"><div class="font-bold text-sm text-white" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.user.name}</div><div class="text-xs text-gray-500" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.lastChat.type === 'image' ? '[รูปภาพ]' : c.lastChat.message.substring(0, 30)}</div></div>${c.unread > 0 ? `<span class="badge-count">${c.unread}</span>` : `<span class="text-xs text-gray-500">${new Date(c.lastChat.created_at || c.lastChat.createdAt).toLocaleTimeString()}</span>`}</div>`).join('') || '<div class="text-center text-gray-500 py-8">ยังไม่มีข้อความ</div>';
+  if (chatUsers.length > 0 && !currentChatUserId) selectChatUser(chatUsers[0].user.id);
+}
+
+async function selectChatUser(userId) { 
+  currentChatUserId = userId; 
+  const user = (await DB.getUsers()).find(u => u.id === userId); 
+  if (user) { 
+    document.getElementById('chatUserName').textContent = user.name; 
+    document.getElementById('chatUserPhone').textContent = user.phone; 
+    document.getElementById('chatUserAvatar').textContent = user.name.charAt(0); 
+  } 
+  document.getElementById('deleteChatBtn').style.display = 'inline-flex'; 
+  loadAdminChatMessages(); 
+  loadChatUsers(); 
+}
+
+async function loadAdminChatMessages() {
+  if (!currentChatUserId) return; 
+  const container = document.getElementById('adminChatMessages');
+  const chats = (await DB.getChats()).filter(c => c.user_id === currentChatUserId || c.userId === currentChatUserId).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+  container.innerHTML = chats.map(c => {
+    if (c.type === 'image') {
+      return `<div class="chat-message ${c.sender === 'admin' ? 'admin' : 'user'}"><img src="${c.message}" style="max-width:200px;border-radius:12px;cursor:pointer;" onclick="showImagePreview('${c.message}')"></div>`;
+    }
+    return `<div class="chat-message ${c.sender === 'admin' ? 'admin' : 'user'}">${c.message}</div>`;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendAdminMessage() {
+  if (!currentChatUserId) return; 
+  const input = document.getElementById('adminChatInput'); 
+  const text = input.value.trim(); 
+  if (!text) return;
+
+  const chat = { 
+    id: 'chat_' + Date.now(), 
+    user_id: currentChatUserId, 
+    userId: currentChatUserId,
+    sender: 'admin', 
+    message: text, 
+    type: 'text', 
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  };
+
+  await DB.createChat(chat);
+  input.value = ''; 
+  loadAdminChatMessages(); 
+  loadChatUsers();
+}
+
+async function sendAdminImage() {
+  if (!currentChatUserId) return; 
+  const input = document.getElementById('adminChatImage'); 
+  const file = input.files[0]; 
+  if (!file) return;
+
+  let imageUrl = null;
+  if (isSupabaseConnected()) {
+    try {
+      imageUrl = await DB.uploadFile('avatars', `admin_chat_${Date.now()}_${file.name}`, file);
+    } catch(e) { console.log('Upload failed, using data URL'); }
+  }
+
+  if (!imageUrl) {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const chat = { 
+        id: 'chat_' + Date.now(), 
+        user_id: currentChatUserId, 
+        userId: currentChatUserId,
+        sender: 'admin', 
+        message: e.target.result, 
+        type: 'image', 
+        createdAt: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+      await DB.createChat(chat);
+      loadAdminChatMessages(); 
+      loadChatUsers();
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+
+  const chat = { 
+    id: 'chat_' + Date.now(), 
+    user_id: currentChatUserId, 
+    userId: currentChatUserId,
+    sender: 'admin', 
+    message: imageUrl, 
+    type: 'image', 
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  };
+  await DB.createChat(chat);
+  loadAdminChatMessages(); 
+  loadChatUsers();
+}
+
+async function deleteUserChatHistory() { 
+  if (!currentChatUserId) return; 
+  if (!confirm('ลบประวัติแชท?')) return; 
+  await DB.deleteChatsByUser(currentChatUserId);
+  showToast('ลบแชทสำเร็จ', 'success'); 
+  loadAdminChatMessages(); 
+  loadChatUsers(); 
+}
+
+// ==================== ADMINS ====================
+async function loadAdmins() {
+  const admins = await DB.getAdmins();
+  document.getElementById('adminsTable').innerHTML = admins.map(a => `<tr><td class="font-bold text-white">${a.username}</td><td class="text-gray-300">${a.name || '-'}</td><td><span class="badge badge-${a.role === 'superadmin' ? 'approved' : 'pending'}">${a.role === 'superadmin' ? 'Super' : 'Admin'}</span></td><td class="text-xs text-gray-500">${new Date(a.created_at || a.createdAt).toLocaleDateString()}</td><td><div class="action-btns">${a.role !== 'superadmin' ? `<button class="btn-danger text-xs" onclick="deleteAdmin('${a.id}')"><i class="fas fa-trash"></i></button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="5" class="text-center text-gray-500 py-8">ไม่มีผู้ดูแลระบบ</td></tr>';
+}
+
+async function addAdmin() {
+  const username = document.getElementById('newAdminUsername').value.trim(); 
+  const name = document.getElementById('newAdminName').value.trim();
+  const password = document.getElementById('newAdminPassword').value; 
+  const confirmPassword = document.getElementById('newAdminConfirmPassword').value;
+  if (!username || !password) { showToast('กรอกข้อมูลให้ครบ', 'alert'); return; } 
+  if (password !== confirmPassword) { showToast('รหัสผ่านไม่ตรงกัน', 'alert'); return; }
+
+  const admins = await DB.getAdmins(); 
+  if (admins.find(a => a.username === username)) { showToast('ชื่อผู้ใช้ซ้ำ', 'alert'); return; }
+
+  const newAdmin = { 
+    id: 'admin_' + Date.now(), 
+    username, 
+    name, 
+    password, 
+    role: 'admin', 
+    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  };
+
+  await DB.createAdmin(newAdmin);
+  showToast('เพิ่มผู้ดูแลสำเร็จ', 'success'); 
+  closeModal('addAdminModal'); 
+  loadAdmins();
+}
+
+async function deleteAdmin(id) { 
+  if (!confirm('ลบผู้ดูแล?')) return; 
+  await DB.deleteAdmin(id); 
+  showToast('ลบสำเร็จ', 'success'); 
+  loadAdmins(); 
+}
+
+// ==================== P2P SETTINGS ====================
+async function loadP2PSettings() {
+  const settings = await DB.getSettings();
+  document.getElementById('p2pAddress').value = settings.p2pAddress || settings.p2p_address || '';
+  document.getElementById('p2pWithdrawFee').value = settings.p2pWithdrawFee || settings.p2p_withdraw_fee || 1;
+  document.getElementById('p2pMinWithdraw').value = settings.p2pMinWithdraw || settings.p2p_min_withdraw || 10;
+  if (settings.p2pQrCode || settings.p2p_qr_url) { 
+    const img = document.getElementById('p2pQrPreview'); 
+    img.querySelector('img').src = settings.p2pQrCode || settings.p2p_qr_url; 
+    img.classList.remove('hidden'); 
+  }
+}
+
+function handleP2PQRUpload(input) {
+  const file = input.files[0]; 
+  if (!file) return;
+  const reader = new FileReader(); 
+  reader.onload = e => { 
+    logoImages.p2p = e.target.result; 
+    const img = document.getElementById('p2pQrPreview'); 
+    img.querySelector('img').src = e.target.result; 
+    img.classList.remove('hidden'); 
+  }; 
+  reader.readAsDataURL(file);
+}
+
+async function saveP2PSettings() {
+  const updates = {
+    p2pAddress: document.getElementById('p2pAddress').value,
+    p2p_withdraw_fee: parseFloat(document.getElementById('p2pWithdrawFee').value) || 1,
+    p2p_min_withdraw: parseFloat(document.getElementById('p2pMinWithdraw').value) || 10
+  };
+  if (logoImages.p2p) updates.p2pQrCode = logoImages.p2p;
+  await DB.updateSettings(updates);
+  showToast('บันทึกการตั้งค่า P2P สำเร็จ', 'success');
+}
+
+// ==================== SETTINGS ====================
+async function loadSettings() {
+  const settings = await DB.getSettings();
+  document.getElementById('settingsWithdrawFee').value = settings.withdrawFee || settings.withdraw_fee || 1;
+  document.getElementById('settingsMinWithdraw').value = settings.minWithdraw || settings.min_withdraw || 10;
+  document.getElementById('settingsSiteName').value = settings.siteName || settings.site_name || 'Binance Gold';
+  document.getElementById('settingsSiteColor').value = settings.siteTitleColor || '#f0b90b';
+  document.getElementById('settingsSiteBgColor').value = settings.siteBgColor || '#050505';
+  const bgPrev = document.getElementById('siteBgPreview');
+  if (settings.siteBgImage) { bgPrev.src = settings.siteBgImage; bgPrev.classList.remove('hidden'); }
+  else { bgPrev.src = ''; bgPrev.classList.add('hidden'); }
+  document.getElementById('settingsWelcome').value = settings.welcomeText || settings.welcome_text || '';
+  document.getElementById('settingsAboutUs').value = settings.aboutUs || settings.about_us || '';
+  if (settings.logoUrl1 || settings.logo_url_1) { 
+    const img = document.getElementById('logoPreview1'); 
+    img.src = settings.logoUrl1 || settings.logo_url_1; 
+    img.classList.remove('hidden'); 
+  }
+  if (settings.logoUrl2 || settings.logo_url_2) { 
+    const img = document.getElementById('logoPreview2'); 
+    img.src = settings.logoUrl2 || settings.logo_url_2; 
+    img.classList.remove('hidden'); 
+  }
+}
+
+function handleLogoUpload(input, num) {
+  const file = input.files[0]; 
+  if (!file) return;
+  const reader = new FileReader(); 
+  reader.onload = async e => { 
+    logoImages[num] = e.target.result; 
+    const img = document.getElementById('logoPreview' + num); 
+    img.src = e.target.result; 
+    img.classList.remove('hidden');
+    // บันทึกทันที — โลโก้ใหม่จะแทนที่โลโก้เดิมบนหน้าเว็บโดยไม่ต้องกดบันทึกซ้ำ
+    const up = {};
+    up[num === 1 ? 'logoUrl1' : 'logoUrl2'] = e.target.result;
+    await DB.updateSettings(up);
+    showToast('เปลี่ยนโลโก้สำเร็จ โลโก้ใหม่แทนที่โลโก้เดิมแล้ว', 'success');
+  }; 
+  reader.readAsDataURL(file);
+}
+
+async function deleteLogo(num) {
+  logoImages[num] = null; 
+  const img = document.getElementById('logoPreview' + num); 
+  img.src = ''; 
+  img.classList.add('hidden');
+  const settings = await DB.getSettings(); 
+  const key = num === 1 ? 'logoUrl1' : 'logoUrl2';
+  settings[key] = null;
+  await DB.updateSettings(settings);
+  showToast('ลบโลโก้แล้ว', 'alert');
+}
+
+// ==================== HERO BACKGROUND SLIDES (5 รูป) ====================
+function handleHeroUpload(input, num) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const up = {};
+    up['heroImage' + num] = e.target.result;
+    await DB.updateSettings(up);
+    loadHeroImages();
+    showToast('อัพโหลดรูปพื้นหลังรูปที่ ' + num + ' สำเร็จ', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function deleteHeroImage(num) {
+  const up = {};
+  up['heroImage' + num] = null; // ลบแล้วหน้าแรกจะกลับเป็นพื้นหลังสีส้มเดิม
+  await DB.updateSettings(up);
+  loadHeroImages();
+  showToast('ลบรูปที่ ' + num + ' แล้ว กลับเป็นพื้นหลังสีส้ม', 'alert');
+}
+
+async function loadHeroImages() {
+  const settings = await DB.getSettings();
+  [1, 2, 3, 4, 5].forEach(function(n) {
+    const img = document.getElementById('heroPreview' + n);
+    if (!img) return;
+    const src = settings['heroImage' + n];
+    if (src) { img.src = src; img.classList.remove('hidden'); }
+    else { img.src = ''; img.classList.add('hidden'); }
+  });
+}
+
+// ---------- พื้นหลังเว็บไซต์ (รูปภาพ) — บันทึกทันทีเมื่ออัพโหลด/ลบ ----------
+async function handleSiteBgUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    await DB.updateSettings({ siteBgImage: e.target.result });
+    const img = document.getElementById('siteBgPreview');
+    img.src = e.target.result; img.classList.remove('hidden');
+    showToast(tAdmin('bgSaved'), 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function deleteSiteBg() {
+  await DB.updateSettings({ siteBgImage: '' });
+  const img = document.getElementById('siteBgPreview');
+  img.src = ''; img.classList.add('hidden');
+  showToast(tAdmin('bgDeleted'), 'success');
+}
+
+async function saveSettings() {
+  const updates = {
+    withdrawFee: parseFloat(document.getElementById('settingsWithdrawFee').value) || 1,
+    minWithdraw: parseFloat(document.getElementById('settingsMinWithdraw').value) || 10,
+    siteName: document.getElementById('settingsSiteName').value,
+    siteTitleColor: document.getElementById('settingsSiteColor').value,
+    siteBgColor: document.getElementById('settingsSiteBgColor').value,
+    welcomeText: document.getElementById('settingsWelcome').value,
+    aboutUs: document.getElementById('settingsAboutUs').value
+  };
+  if (logoImages[1]) updates.logoUrl1 = logoImages[1]; 
+  if (logoImages[2]) updates.logoUrl2 = logoImages[2];
+  await DB.updateSettings(updates);
+  var sidebarName = document.getElementById('adminSidebarSiteName');
+  if (sidebarName) sidebarName.textContent = updates.siteName || 'Binance Gold';
+  showToast('บันทึกการตั้งค่าสำเร็จ', 'success');
+}
+
+// ==================== REALTIME CALLBACKS ====================
+window.onChatUpdate = (payload) => {
+  if (payload.new && (payload.new.user_id === currentChatUserId || payload.new.userId === currentChatUserId)) {
+    loadAdminChatMessages();
+    loadChatUsers();
+  }
+};
+
+window.onDepositUpdate = (payload) => {
+  loadDeposits();
+  loadDashboard();
+  updateBadges();
+};
+
+window.onWithdrawUpdate = (payload) => {
+  loadWithdraws();
+  loadDashboard();
+  updateBadges();
+};
+
+window.onTradeUpdate = (payload) => {
+  loadTrades();
+  loadDashboard();
+  updateBadges();
+};
+
+// ==================== AUTO TRADE SETTINGS ====================
+let userAutoTradeSettings = {};
+
+async function loadAutoTradeUserList() {
+  const users = await DB.getUsers();
+  const sel = document.getElementById('autoTradeUserSelect');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">-- เลือกสมาชิก --</option>';
+  users.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u.id;
+    opt.textContent = u.name + ' (' + u.phone + ')';
+    sel.appendChild(opt);
+  });
+  sel.value = currentVal;
+
+  // Show list of configured users
+  const list = document.getElementById('autoTradeUserList');
+  if (list) {
+    const all = await DB.getSettings(); const settings = all.autoTradeUserSettings || {};
+    const configured = users.filter(u => settings[u.id]);
+    if (configured.length === 0) {
+      list.innerHTML = '<div class="text-xs text-gray-500">ยังไม่มีสมาชิกที่ตั้งค่า</div>';
+    } else {
+      list.innerHTML = configured.map(u => {
+        const s = settings[u.id];
+        return `<div class="flex justify-between items-center bg-[#111] p-3 rounded-xl"><div><div class="font-bold text-white text-sm">${u.name}</div><div class="text-xs text-gray-400">ผล: ${s.result === 'win' ? 'ชนะ' : s.result === 'lose' ? 'แพ้' : 'สุ่ม'} | ดีเลย์: ${s.delay}s | ชนะ: ${s.winRate}%</div></div><button class="btn-danger text-xs" onclick="clearAutoTradeForUser('${u.id}')"><i class="fas fa-trash"></i></button></div>`;
+      }).join('');
+    }
+  }
+}
+
+async function loadAutoTradeSettings() {
+  const userId = document.getElementById('autoTradeUserSelect').value;
+  if (!userId) return;
+  const all = await DB.getSettings(); const settings = all.autoTradeUserSettings || {};
+  const s = settings[userId];
+  if (s) {
+    document.getElementById('autoTradeResult').value = s.result || '';
+    document.getElementById('autoTradeDelay').value = s.delay || 5;
+    document.getElementById('autoWinRate').value = s.winRate || 50;
+  } else {
+    document.getElementById('autoTradeResult').value = '';
+    document.getElementById('autoTradeDelay').value = 5;
+    document.getElementById('autoWinRate').value = 50;
+  }
+}
+
+async function saveAutoTradeSettings() {
+  const userId = document.getElementById('autoTradeUserSelect').value;
+  if (!userId) { showToast('กรุณาเลือกสมาชิก', 'alert'); return; }
+  const result = document.getElementById('autoTradeResult').value;
+  const delay = parseInt(document.getElementById('autoTradeDelay').value) || 5;
+  const winRate = parseInt(document.getElementById('autoWinRate').value) || 50;
+
+  const all = await DB.getSettings(); const settings = all.autoTradeUserSettings || {};
+  settings[userId] = { result, delay, winRate };
+  await DB.updateSettings({ autoTradeUserSettings: settings });
+  showToast('บันทึกการตั้งค่าอัตโนมัติสำเร็จ', 'success');
+  loadAutoTradeUserList();
+}
+
+async function clearAutoTradeSettings() {
+  const userId = document.getElementById('autoTradeUserSelect').value;
+  if (!userId) { showToast('กรุณาเลือกสมาชิก', 'alert'); return; }
+  const all = await DB.getSettings(); const settings = all.autoTradeUserSettings || {};
+  delete settings[userId];
+  await DB.updateSettings({ autoTradeUserSettings: settings });
+  showToast('ล้างการตั้งค้าสำเร็จ', 'success');
+  loadAutoTradeSettings();
+  loadAutoTradeUserList();
+}
+
+async function clearAutoTradeForUser(userId) {
+  const all = await DB.getSettings(); const settings = all.autoTradeUserSettings || {};
+  delete settings[userId];
+  await DB.updateSettings({ autoTradeUserSettings: settings });
+  showToast('ล้างการตั้งค่าสำเร็จ', 'success');
+  loadAutoTradeUserList();
+}
+
+// ==================== PACKAGES SETTINGS ====================
+// แพ็คเกจการซื้อขาย (กำไร% / นาที / ยอดขั้นต่ำ) — หน้าเว็บอ่านชุดเดียวกันนี้
+let currentPackages = [
+  {percent:10, minutes:1, amount:100},
+  {percent:14, minutes:2, amount:5000},
+  {percent:16, minutes:2, amount:30000},
+  {percent:18, minutes:2, amount:50000},
+  {percent:20, minutes:3, amount:100000},
+  {percent:40, minutes:3, amount:200000},
+  {percent:45, minutes:6, amount:500000},
+  {percent:50, minutes:7, amount:700000},
+  {percent:55, minutes:8, amount:900000}
+];
+
+async function loadPackages() {
+  const settings = await DB.getSettings();
+  let p = null;
+  try { p = JSON.parse(settings.tradePackages || 'null'); } catch(e) {}
+  if (Array.isArray(p) && p.length > 0) currentPackages = p;
+  renderPackagesList();
+}
+
+function renderPackagesList() {
+  const container = document.getElementById('packagesList');
+  if (!container) return;
+  container.innerHTML = currentPackages.map((p, i) => `
+    <div class="flex gap-3 items-center bg-[#111] p-3 rounded-xl">
+      <div class="flex-1"><label class="text-xs text-gray-400">${tAdmin('pkgPercent')}</label><input type="number" class="package-percent" data-index="${i}" value="${p.percent}" min="0" style="background:#fbbf24 !important;color:#000 !important;"></div>
+      <div class="flex-1"><label class="text-xs text-gray-400">${tAdmin('pkgMinutes')}</label><input type="number" class="package-minutes" data-index="${i}" value="${p.minutes || 1}" min="1" style="background:#fbbf24 !important;color:#000 !important;"></div>
+      <div class="flex-1"><label class="text-xs text-gray-400">${tAdmin('pkgMinAmount')}</label><input type="number" class="package-amount" data-index="${i}" value="${p.amount}" min="0" style="background:#fbbf24 !important;color:#000 !important;"></div>
+      <button class="btn-danger text-xs mt-4" onclick="removePackageRow(${i})"><i class="fas fa-trash"></i></button>
+    </div>
+  `).join('');
+}
+
+function addPackageRow() {
+  currentPackages.push({percent: 0, minutes: 1, amount: 0});
+  renderPackagesList();
+}
+
+function removePackageRow(index) {
+  currentPackages.splice(index, 1);
+  renderPackagesList();
+}
+
+async function savePackages() {
+  const percents = document.querySelectorAll('.package-percent');
+  const minutes = document.querySelectorAll('.package-minutes');
+  const amounts = document.querySelectorAll('.package-amount');
+  const newPackages = [];
+  for (let i = 0; i < percents.length; i++) {
+    newPackages.push({
+      percent: parseFloat(percents[i].value) || 0,
+      minutes: parseInt(minutes[i].value) || 1,
+      amount: parseFloat(amounts[i].value) || 0
+    });
+  }
+  currentPackages = newPackages;
+  await DB.updateSettings({ tradePackages: JSON.stringify(currentPackages) });
+  showToast(tAdmin('pkgSaved'), 'success');
+}
+
+// ==================== FUND ADMIN (จัดการกองทุน) ====================
+const FUND_DEFAULT_PACKAGES_ADMIN = [
+  { amount: 500, percent: 10, days: 1 },
+  { amount: 1000, percent: 15, days: 2 },
+  { amount: 3000, percent: 20, days: 10 },
+  { amount: 10000, percent: 30, days: 20 },
+  { amount: 30000, percent: 200, days: 20 },
+  { amount: 100000, percent: 40, days: 30 }
+];
+let currentFundPackages = [];
+
+async function getFundInvestments() { return await DB.getFunds(); }
+async function saveFundInvestments(arr) { return Promise.resolve(); }
+
+async function loadFundPackagesAdmin() {
+  const settings = await DB.getSettings();
+  let pkgs = null;
+  try { pkgs = JSON.parse(settings.fundPackages || 'null'); } catch(e) {}
+  if (!Array.isArray(pkgs) || pkgs.length === 0) pkgs = FUND_DEFAULT_PACKAGES_ADMIN.slice();
+  currentFundPackages = pkgs;
+  renderFundPackagesAdmin();
+}
+
+function renderFundPackagesAdmin() {
+  const container = document.getElementById('fundPackagesList');
+  if (!container) return;
+  container.innerHTML = currentFundPackages.map((p, i) => `
+    <div class="flex gap-3 items-center bg-[#111] p-3 rounded-xl">
+      <div class="flex-1"><label class="text-xs text-gray-400">จำนวนเงิน (USDT)</label><input type="number" class="fund-pkg-amount" data-index="${i}" value="${p.amount}" min="0" style="background:#fbbf24 !important;color:#000 !important;"></div>
+      <div class="flex-1"><label class="text-xs text-gray-400">กำไร (%)</label><input type="number" class="fund-pkg-percent" data-index="${i}" value="${p.percent}" min="0" style="background:#fbbf24 !important;color:#000 !important;"></div>
+      <div class="flex-1"><label class="text-xs text-gray-400">จำนวนวัน</label><input type="number" class="fund-pkg-days" data-index="${i}" value="${p.days}" min="1" style="background:#fbbf24 !important;color:#000 !important;"></div>
+      <button class="btn-danger text-xs mt-4" onclick="removeFundPackageRow(${i})"><i class="fas fa-trash"></i></button>
+    </div>
+  `).join('');
+}
+
+function addFundPackageRow() { currentFundPackages.push({ amount: 0, percent: 0, days: 1 }); renderFundPackagesAdmin(); }
+function removeFundPackageRow(index) { currentFundPackages.splice(index, 1); renderFundPackagesAdmin(); }
+
+async function saveFundPackages() {
+  const amounts = document.querySelectorAll('.fund-pkg-amount');
+  const percents = document.querySelectorAll('.fund-pkg-percent');
+  const daysInputs = document.querySelectorAll('.fund-pkg-days');
+  const arr = [];
+  for (let i = 0; i < amounts.length; i++) {
+    arr.push({ amount: parseFloat(amounts[i].value) || 0, percent: parseFloat(percents[i].value) || 0, days: parseInt(daysInputs[i].value) || 1 });
+  }
+  currentFundPackages = arr;
+  await DB.updateSettings({ fundPackages: JSON.stringify(arr) });
+  showToast('บันทึกแพ็คเกจกองทุนสำเร็จ', 'success');
+}
+
+async function loadFundInvestments() {
+  await processDueFundSettlements(); // ปิดผลรายการที่ครบเวลาและแอดมินตั้งผลไว้แล้ว
+  const users = await DB.getUsers();
+  let funds = (await getFundInvestments()).sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+  const filterEl = document.getElementById('fundFilter');
+  const filter = filterEl ? filterEl.value : 'all';
+  const now = Date.now();
+  if (filter === 'active') funds = funds.filter(f => f.status === 'active' && new Date(f.endTime).getTime() > now);
+  else if (filter === 'expired') funds = funds.filter(f => f.status === 'active' && new Date(f.endTime).getTime() <= now);
+  else if (filter === 'win') funds = funds.filter(f => f.status === 'completed' && f.result === 'win');
+  else if (filter === 'lose') funds = funds.filter(f => f.status === 'completed' && f.result === 'lose');
+  const tbody = document.getElementById('fundTable');
+  if (!tbody) return;
+  if (funds.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่มีรายการลงทุน</td></tr>'; return; }
+  tbody.innerHTML = funds.map(f => {
+    const user = users.find(u => u.id === f.user_id || u.id === f.userId);
+    const amount = parseFloat(f.amount) || 0;
+    const profit = amount * (parseFloat(f.percent) || 0) / 100;
+    const end = new Date(f.endTime).getTime();
+    const expired = now >= end;
+    const remain = expired ? 'ครบกำหนด' : fmtFundRemain(end - now);
+    let statusHtml, actions;
+    if (f.status === 'active') {
+      // แสดงผลที่แอดมินตั้งไว้ล่วงหน้า (รอครบเวลา)
+      const preset = f.result ? (f.result === 'win' ? ' → ชนะ' : ' → ขาดทุน') : '';
+      statusHtml = expired
+        ? '<span class="badge badge-pending">ครบกำหนด รอผล' + preset + '</span>'
+        : '<span class="badge badge-pending">กำลังลงทุน' + preset + '</span>';
+      const winActive = f.result === 'win' ? ' style="box-shadow:0 0 0 2px #22c55e;"' : '';
+      const loseActive = f.result === 'lose' ? ' style="box-shadow:0 0 0 2px #ef4444;"' : '';
+      actions = `<button class="btn-success text-xs"${winActive} onclick="setFundResult('${f.id}','win')"><i class="fas fa-trophy"></i> ชนะ</button><button class="btn-danger text-xs"${loseActive} onclick="setFundResult('${f.id}','lose')"><i class="fas fa-times-circle"></i> ขาดทุน</button>`;
+    } else {
+      statusHtml = f.result === 'win' ? '<span class="badge badge-approved">ชนะ</span>' : '<span class="badge badge-rejected">ขาดทุน</span>';
+      actions = '<span class="text-xs text-gray-500">เสร็จสิ้น</span>';
+    }
+    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">+${f.percent}% ($${profit.toLocaleString()})</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
+  }).join('');
+}
+
+function fmtFundRemain(ms) {
+  const s = Math.max(Math.floor(ms / 1000), 0);
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return d + 'วัน ' + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+
+// แอดมินตั้งผลล่วงหน้า — ระบบจะแสดงผลและจ่ายเงินอัตโนมัติเมื่อครบเวลาที่กำหนด
+async function setFundResult(fundId, result) {
+  try { const out=await BinanceGoldAPI.fetch('/api/admin/funds/'+encodeURIComponent(fundId)+'/set-result',{method:'POST',body:{result}}); const f=out.fund; showToast('กำหนดผล: '+(result==='win'?'ชนะ':'ขาดทุน')+(Date.now()>=new Date(f.endTime).getTime()?' — ครบเวลาแล้ว':' แล้ว'),'success'); loadFundInvestments(); loadDashboard(); updateBadges(); }
+  catch(e){showToast('ไม่สามารถกำหนดผลได้','alert');}
+}
+
+// ปิดผลกองทุนที่ครบเวลาและมีผลตั้งไว้แล้ว (ทุกสมาชิก) — คืนเงินต้น+กำไรถ้าชนะ
+async function processDueFundSettlements() {
+  const funds = await getFundInvestments(); const now=Date.now();
+  for(const f of funds){ if(f.status!=='active'||!f.result||!f.endTime||new Date(f.endTime).getTime()>now) continue;
+    try { await BinanceGoldAPI.fetch('/api/admin/funds/'+encodeURIComponent(f.id)+'/settle',{method:'POST',body:{}}); } catch(e) { console.warn('fund settlement deferred',e); }
+  }
+}
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', async () => {
+  setAdminTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+  const logoutModal=document.getElementById('adminLogoutConfirm');
+  if(logoutModal) logoutModal.addEventListener('click', function(e){ if(e.target===logoutModal) closeAdminLogoutConfirm(); });
+  initAdminData(); 
+  updateAdminLanguage();
+  checkAdminAuth();
+  document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
+});
+</script>
+<script>
+// ===== CTA BUTTON COLORS ADMIN (เพิ่มใหม่ — add-only: ตั้งสีปุ่ม "เริ่มต้นใช้งาน" หน้าแรก) =====
+async function saveCtaColors() {
+  const ctaBtnBg = document.getElementById('settingsCtaBtnBg').value;
+  const ctaBtnTextColor = document.getElementById('settingsCtaBtnText').value;
+  await DB.updateSettings({ ctaBtnBg: ctaBtnBg, ctaBtnTextColor: ctaBtnTextColor });
+  showToast('บันทึกสีปุ่มเริ่มต้นใช้งานสำเร็จ', 'success');
+}
+async function loadCtaColors() {
+  try {
+    const s = await DB.getSettings();
+    const bgEl = document.getElementById('settingsCtaBtnBg');
+    const tcEl = document.getElementById('settingsCtaBtnText');
+    if (bgEl) bgEl.value = s.ctaBtnBg || '#000000';
+    if (tcEl) tcEl.value = s.ctaBtnTextColor || '#ffffff';
+    // sync ช่องใน modal แก้ไขข้อความหน้าแรก (ถ้ามี)
+    const mBg = document.getElementById('homeCtaBtnBg');
+    const mTc = document.getElementById('homeCtaBtnText');
+    if (mBg) mBg.value = s.ctaBtnBg || '#000000';
+    if (mTc) mTc.value = s.ctaBtnTextColor || '#ffffff';
+  } catch (e) { console.error('loadCtaColors error:', e); }
+}
+document.addEventListener('DOMContentLoaded', loadCtaColors);
+// ขยาย modal "แก้ไขข้อความหน้าแรก" แบบ add-only (wrap ฟังก์ชันเดิม ไม่แก้ฟังก์ชันเดิม)
+if (!window.__ctaColorsAdminWrapped) {
+  window.__ctaColorsAdminWrapped = true;
+  var origOpenHomeTextEditor = window.openHomeTextEditor;
+  if (typeof origOpenHomeTextEditor === 'function') {
+    window.openHomeTextEditor = async function () {
+      const r = await origOpenHomeTextEditor.apply(this, arguments);
+      await loadCtaColors();
+      return r;
+    };
+  }
+  var origSaveHomeText = window.saveHomeText;
+  if (typeof origSaveHomeText === 'function') {
+    window.saveHomeText = async function () {
+      const r = await origSaveHomeText.apply(this, arguments);
+      const mBg = document.getElementById('homeCtaBtnBg');
+      const mTc = document.getElementById('homeCtaBtnText');
+      if (mBg && mTc) {
+        await DB.updateSettings({ ctaBtnBg: mBg.value, ctaBtnTextColor: mTc.value });
+        await loadCtaColors(); // sync กลับช่องหลักในการ์ดข้อมูลเว็บไซต์
+      }
+      return r;
+    };
+  }
+}
+</script>
+<script>
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeAdminLogoutConfirm(); });
+</script>
+<script src="/api-db.js"></script>
+</body>
+</html>

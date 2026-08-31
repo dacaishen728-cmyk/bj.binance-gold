@@ -1,0 +1,20 @@
+{
+  "name": "binance-gold-cloudflare",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Binance Gold production app for Cloudflare Workers + D1 + Static Assets",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:migrate:local": "wrangler d1 migrations apply binance-gold --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply binance-gold --remote",
+    "check": "node --check worker.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
