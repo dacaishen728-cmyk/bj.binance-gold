@@ -156,6 +156,13 @@ body { background: #050505; color: #e5e5e5; margin: 0; padding: 0; padding-botto
 input, select, textarea { outline: none !important; background: #111111 !important; border: 1px solid #333333 !important; color: #ffffff !important; border-radius: 12px !important; padding: 14px 16px !important; width: 100% !important; box-sizing: border-box !important; font-size: 16px !important; font-weight: 500 !important; }
 input::placeholder, textarea::placeholder { color: #666666 !important; font-weight: 400 !important; }
 input:focus, select:focus, textarea:focus { border-color: #eab308 !important; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.15) !important; background: #111111 !important; color: #ffffff !important; }
+/* ปุ่มดวงตา toggle แสดง/ซ่อนรหัสผ่าน (อยู่ในช่อง input ด้านขวา) */
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 48px !important; }
+.pw-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none !important; border: none !important; box-shadow: none !important; color: #9ca3af; cursor: pointer; padding: 8px 10px !important; font-size: 16px; line-height: 1; width: auto !important; border-radius: 8px !important; }
+.pw-eye:hover { color: #eab308; }
+html[data-theme="light"] .pw-eye { color: #6b7280; }
+html[data-theme="light"] .pw-eye:hover { color: #eab308; }
 select { appearance: auto !important; -webkit-appearance: menulist !important; }
 select option { color: #000000 !important; background: #ffffff !important; }
 .market-card { background: #111111; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1a1a1a; }
@@ -493,7 +500,6 @@ html[data-theme="light"] { color-scheme: light; }
 <div id="heroLogoContainer" style="display:none;margin-bottom:16px;">
 <img id="heroLogo" src="" alt="Logo" style="width:100px;height:100px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
 </div>
-<h1 class="text-4xl font-black text-black mb-2 tracking-tight" id="homeSiteTitle">Binance Gold</h1>
 <p class="text-black/80 text-lg font-medium mb-6" id="homeWelcomeText">เริ่มปั่นพอร์ตกันเลย</p>
 <button class="bg-black text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-900 transition flex items-center gap-3 shadow-lg" onclick="showTab('market', document.querySelector('[data-tab=market]'))">
 <span id="homeBtnText">เริ่มต้นใช้งาน</span>
@@ -903,7 +909,10 @@ QR Code
 <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">B</div>
 <span class="font-bold text-white" id="chatTitle">บริการลูกค้า</span>
 </div>
+<div class="flex items-center gap-3">
+<button class="text-gray-400 hover:text-yellow-500 transition text-lg" title="รีเฟรช" onclick="renderChat()">⟳</button>
 <button class="text-gray-400 hover:text-white" onclick="closeModal('chatModal')">✕</button>
+</div>
 </div>
 <div class="flex-1 p-4 overflow-y-auto space-y-4 bg-[#050505]" id="chatMessages">
 <div class="chat-message received" id="chatWelcome">สวัสดีค่ะ ยินดีให้บริการ มีอะไรให้ทางเราช่วยเหลือไหมคะ?</div>
@@ -1013,11 +1022,11 @@ QR Code
 <div class="space-y-4">
 <div>
 <label class="text-sm mb-2 block text-gray-300" id="settingsPasswordLabel">รหัสผ่านใหม่ (เว้นว่างหากไม่ต้องการเปลี่ยน)</label>
-<input id="editPassword" placeholder="รหัสผ่านใหม่" type="password"/>
+<div class="pw-wrap"><input id="editPassword" placeholder="รหัสผ่านใหม่" type="password"/><button type="button" class="pw-eye" onclick="togglePasswordVisibility('editPassword','editPasswordEye')" tabindex="-1" aria-label="แสดง/ซ่อนรหัสผ่าน"><i class="fas fa-eye" id="editPasswordEye"></i></button></div>
 </div>
 <div>
 <label class="text-sm mb-2 block text-gray-300" id="settingsConfirmLabel">ยืนยันรหัสผ่านใหม่</label>
-<input id="editConfirmPassword" placeholder="ยืนยันรหัสผ่าน" type="password"/>
+<div class="pw-wrap"><input id="editConfirmPassword" placeholder="ยืนยันรหัสผ่าน" type="password"/><button type="button" class="pw-eye" onclick="togglePasswordVisibility('editConfirmPassword','editConfirmPasswordEye')" tabindex="-1" aria-label="แสดง/ซ่อนรหัสผ่าน"><i class="fas fa-eye" id="editConfirmPasswordEye"></i></button></div>
 </div>
 <button class="w-full bg-yellow-500 text-black py-4 rounded-2xl font-bold shadow-lg hover:bg-yellow-400 transition mt-2" onclick="saveSettingsProfile()" id="settingsSaveBtn">บันทึกการเปลี่ยนแปลง</button>
 </div>
@@ -1263,8 +1272,8 @@ function showTab(tabId, btn) {
   if (tabId === 'fund') loadFundData();
 }
 
-function openModal(id) { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); document.body.style.overflow = ''; }
+function openModal(id) { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; if (id === 'chatModal') { renderChat(); startChatPolling(); } }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); document.body.style.overflow = ''; if (id === 'chatModal') stopChatPolling(); }
 
 // ==================== 15 LANGUAGES ====================
 function getLangMeta(code) {
@@ -1390,6 +1399,15 @@ function updatePageLanguage() {
 }
 
 // ==================== AUTH ====================
+// ปุ่มดวงตาแสดง/ซ่อนรหัสผ่าน — สลับ type password/text ของช่องที่กำหนด
+function togglePasswordVisibility(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  if (icon) icon.className = 'fas ' + (show ? 'fa-eye-slash' : 'fa-eye');
+}
 function openAuthModal(type) {
   const container = document.getElementById('authContainer');
   container.dataset.mode = type;
@@ -1397,7 +1415,7 @@ function openAuthModal(type) {
     container.innerHTML = `<h2 class="text-2xl font-bold mb-6 text-white">${t('loginTab')}</h2>
     <div class="space-y-4">
     <input id="loginPhone" placeholder="${t('loginPhonePlaceholder')}" type="tel"/>
-    <input id="loginPassword" placeholder="${t('loginPasswordPlaceholder')}" type="password"/>
+    <div class="pw-wrap"><input id="loginPassword" placeholder="${t('loginPasswordPlaceholder')}" type="password"/><button type="button" class="pw-eye" onclick="togglePasswordVisibility('loginPassword','loginPasswordEye')" tabindex="-1" aria-label="แสดง/ซ่อนรหัสผ่าน"><i class="fas fa-eye" id="loginPasswordEye"></i></button></div>
     <button class="w-full bg-yellow-500 text-black py-4 rounded-2xl font-bold shadow-lg hover:bg-yellow-400 transition" onclick="login()">${t('loginBtn')}</button>
     <p class="text-center text-sm text-gray-400"><button class="text-yellow-400 hover:underline" onclick="openAuthModal('register')">${t('registerTab')}</button></p>
     </div>`;
@@ -1406,8 +1424,8 @@ function openAuthModal(type) {
     <div class="space-y-4">
     <input id="regName" placeholder="${t('regNamePlaceholder')}" type="text"/>
     <input id="regPhone" placeholder="${t('regPhonePlaceholder')}" type="tel"/>
-    <input id="regPassword" placeholder="${t('regPasswordPlaceholder')}" type="password"/>
-    <input id="regConfirmPassword" placeholder="${t('regConfirmPasswordPlaceholder')}" type="password"/>
+    <div class="pw-wrap"><input id="regPassword" placeholder="${t('regPasswordPlaceholder')}" type="password"/><button type="button" class="pw-eye" onclick="togglePasswordVisibility('regPassword','regPasswordEye')" tabindex="-1" aria-label="แสดง/ซ่อนรหัสผ่าน"><i class="fas fa-eye" id="regPasswordEye"></i></button></div>
+    <div class="pw-wrap"><input id="regConfirmPassword" placeholder="${t('regConfirmPasswordPlaceholder')}" type="password"/><button type="button" class="pw-eye" onclick="togglePasswordVisibility('regConfirmPassword','regConfirmPasswordEye')" tabindex="-1" aria-label="แสดง/ซ่อนรหัสผ่าน"><i class="fas fa-eye" id="regConfirmPasswordEye"></i></button></div>
     <button class="w-full bg-yellow-500 text-black py-4 rounded-2xl font-bold shadow-lg hover:bg-yellow-400 transition" onclick="register()">${t('regBtn')}</button>
     <p class="text-center text-sm text-gray-400"><button class="text-yellow-400 hover:underline" onclick="openAuthModal('login')">${t('loginTab')}</button></p>
     </div>`;
@@ -2023,6 +2041,11 @@ function closeTradeRunning() {
   if (currentUser) { loadTradeHistory(); loadWalletData(); }
 }
 
+// สุ่มยอดกำไร/ขาดทุนช่วง base..base*1.8 (ปัด 2 ตำแหน่ง) — กฎเดียวกับฝั่ง Worker
+// ใช้เฉพาะ fallback โหมด offline; โหมด production ใช้ยอดจริงจาก server เสมอ
+function randomizeProfit(base) { base = parseFloat(base) || 0; if (base <= 0) return 0; return Math.round(base * (1 + Math.random() * 0.8) * 100) / 100; }
+function randomizeLoss(stake) { stake = parseFloat(stake) || 0; if (stake <= 0) return 0; return Math.min(randomizeProfit(stake), stake); }
+
 // ปิดผลเทรดอัตโนมัติเมื่อครบเวลา — คืนเงินต้น+กำไรถ้าแอดมินตั้ง "ชนะ" ไว้ล่วงหน้า
 async function processTradeSettlements() {
   if (!currentUser) return 0;
@@ -2037,10 +2060,12 @@ async function processTradeSettlements() {
         // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/เวลา คำนวณกำไร (สุ่มผลถ้าแอดมินยังไม่ตั้ง) และเครดิตยอดเงินผ่าน transaction ledger
         try {
           const r = await DB.settleTrade(tr.id);
-          const res = (r && r.trade && r.trade.result) || tr.result;
-          const profit = res === 'win' ? amount * pct / 100 : -amount;
-          if (res === 'win') showToast(t('winTxt') + ' +$' + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
-          else showToast(t('loseTxt') + ' -$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+          const st = (r && r.trade) || {};
+          const res = st.result || tr.result;
+          // ใช้ยอดจริงที่ server สุ่มและบันทึกไว้ตอน settle (ไม่คำนวณเองฝั่ง client)
+          const settledProfit = (typeof st.profit === 'number') ? st.profit : (res === 'win' ? amount * pct / 100 : -amount);
+          if (res === 'win') showToast(t('winTxt') + ' +$' + settledProfit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+          else showToast(t('loseTxt') + ' -$' + Math.abs(settledProfit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
           currentUser = await DB.getCurrentUser();
           settled++;
         } catch (e) { console.error('settleTrade failed:', e); }
@@ -2048,14 +2073,14 @@ async function processTradeSettlements() {
       }
       // Fallback โหมด offline/localStorage (ไม่มี Worker API) — settle ได้เฉพาะรายการที่แอดมินตั้งผลไว้แล้ว
       if (tr.result !== 'win' && tr.result !== 'lose') continue;
-      const profit = tr.result === 'win' ? amount * pct / 100 : -amount;
+      const profit = tr.result === 'win' ? randomizeProfit(amount * pct / 100) : -randomizeLoss(amount);
       if (tr.result === 'win') {
         currentUser.balance = (parseFloat(currentUser.balance) || 0) + amount + profit;
         await DB.updateUser(currentUser.id, { balance: currentUser.balance });
         await DB.setCurrentUser(currentUser);
-        showToast(t('winTxt') + ' +$' + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
+        showToast(t('winTxt') + ' +$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
       } else {
-        showToast(t('loseTxt') + ' -$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+        showToast(t('loseTxt') + ' -$' + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
       }
       await DB.updateTrade(tr.id, { status: 'closed', profit: profit, closed_at: new Date().toISOString() });
       settled++;
@@ -2367,26 +2392,121 @@ function copyToClipboard(elementId) {
 }
 
 // ==================== CHAT ====================
+// Near-real-time chat: while the chat modal is open we poll ONLY this user's
+// thread every 3.5s (skipped while the tab is hidden) using the ?since=
+// cursor, and append just the new messages — no full re-render, so the scroll
+// position and already-loaded images stay put. Polling stops the moment the
+// modal closes, keeping us far below the 1500 req/15min rate limit.
+let chatPollTimer = null;
+let chatLastTs = null;          // ISO timestamp cursor for ?since=
+let chatKnownIds = {};          // ids already rendered (dedup optimistic vs polled)
+
+function chatModalIsOpen() {
+  const m = document.getElementById('chatModal');
+  return !!(m && m.classList.contains('active'));
+}
+
+function chatBubbleHtml(c) {
+  const cls = c.sender === 'admin' ? 'received' : 'sent';
+  if (c.type === 'image') return `<div class="chat-message ${cls}"><img src="${c.message}" style="max-width:200px;border-radius:12px;"></div>`;
+  return `<div class="chat-message ${cls}">${c.message}</div>`;
+}
+
+function appendChatMessages(chats) {
+  const container = document.getElementById('chatMessages');
+  if (!container || !chats.length) return;
+  const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+  let html = '';
+  chats.forEach(c => {
+    if (!c || chatKnownIds[c.id]) return;
+    chatKnownIds[c.id] = true;
+    const ts = c.created_at || c.createdAt;
+    if (ts && (!chatLastTs || ts > chatLastTs)) chatLastTs = ts;
+    html += chatBubbleHtml(c);
+  });
+  if (!html) return;
+  container.insertAdjacentHTML('beforeend', html);
+  if (nearBottom) container.scrollTop = container.scrollHeight;
+}
+
+async function pollChatNew() {
+  if (!currentUser || !chatModalIsOpen() || document.hidden) return;
+  try {
+    const list = await DB.getChatsByUser(currentUser.id, chatLastTs || undefined);
+    const fresh = (list || []).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+    appendChatMessages(fresh);
+  } catch (e) { console.error('chat poll', e); }
+}
+
+function startChatPolling() {
+  stopChatPolling();
+  chatPollTimer = setInterval(function () { if (!document.hidden) pollChatNew(); }, 3500);
+}
+
+function stopChatPolling() {
+  if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
+}
+
+function buildChatId() {
+  return 'C' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
 async function sendMessage() {
   if (!currentUser) return;
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if (!text) return;
 
-  const chat = { 
-    id: 'C' + Math.floor(100000 + Math.random() * 900000).toString(), 
-    user_id: currentUser.id, 
+  const nowIso = new Date().toISOString();
+  const chat = {
+    id: buildChatId(),
+    user_id: currentUser.id,
     userId: currentUser.id,
-    sender: 'user', 
-    message: text, 
-    type: 'text', 
-    createdAt: new Date().toISOString(),
-    created_at: new Date().toISOString()
+    sender: 'user',
+    message: text,
+    type: 'text',
+    createdAt: nowIso,
+    created_at: nowIso
   };
 
+  // Optimistic: show our own message instantly; the id is registered so the
+  // next poll skips the server's copy of the same record.
+  input.value = '';
+  chatKnownIds[chat.id] = true;
+  const nts = chat.created_at;
+  if (!chatLastTs || nts > chatLastTs) chatLastTs = nts;
+  if (chatModalIsOpen()) {
+    const container = document.getElementById('chatMessages');
+    container.insertAdjacentHTML('beforeend', chatBubbleHtml(chat));
+    container.scrollTop = container.scrollHeight;
+  }
+  try {
+    await DB.createChat(chat);
+  } catch (e) { console.error(e); showToast(t('error') || 'ส่งข้อความไม่สำเร็จ'); }
+  pollChatNew();
+}
+
+async function sendChatImage(imageUrl) {
+  const nowIso = new Date().toISOString();
+  const chat = {
+    id: buildChatId(),
+    user_id: currentUser.id,
+    userId: currentUser.id,
+    sender: 'user',
+    message: imageUrl,
+    type: 'image',
+    createdAt: nowIso,
+    created_at: nowIso
+  };
+  chatKnownIds[chat.id] = true;
+  if (!chatLastTs || chat.created_at > chatLastTs) chatLastTs = chat.created_at;
+  if (chatModalIsOpen()) {
+    const container = document.getElementById('chatMessages');
+    container.insertAdjacentHTML('beforeend', chatBubbleHtml(chat));
+    container.scrollTop = container.scrollHeight;
+  }
   await DB.createChat(chat);
-  input.value = ''; 
-  renderChat();
+  pollChatNew();
 }
 
 async function handleChatImageUpload(input) {
@@ -2404,47 +2524,31 @@ async function handleChatImageUpload(input) {
   if (!imageUrl) {
     try {
       const url = await resizeImageFile(file, 1000, 0.8);
-      const chat = { 
-        id: 'C' + Math.floor(100000 + Math.random() * 900000).toString(), 
-        user_id: currentUser.id, 
-        userId: currentUser.id,
-        sender: 'user', 
-        message: url, 
-        type: 'image', 
-        createdAt: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      };
-      await DB.createChat(chat);
-      renderChat();
+      await sendChatImage(url);
     } catch (e) { console.error(e); showToast(t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); }
     input.value = '';
     return;
   }
 
-  const chat = { 
-    id: 'C' + Math.floor(100000 + Math.random() * 900000).toString(), 
-    user_id: currentUser.id, 
-    userId: currentUser.id,
-    sender: 'user', 
-    message: imageUrl, 
-    type: 'image', 
-    createdAt: new Date().toISOString(),
-    created_at: new Date().toISOString()
-  };
-  await DB.createChat(chat);
-  renderChat();
+  try { await sendChatImage(imageUrl); } catch (e) { console.error(e); showToast(t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); }
+  input.value = '';
 }
 
 async function renderChat() {
   if (!currentUser) return;
   const container = document.getElementById('chatMessages');
   const chats = (await DB.getChatsByUser(currentUser.id)).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+  // Full render resets the incremental cursor/dedup state.
+  chatKnownIds = {};
+  chatLastTs = null;
   let html = `<div class="chat-message received">${t('chatWelcome')}</div>`;
   chats.forEach(c => {
-    if (c.type === 'image') html += `<div class="chat-message ${c.sender === 'admin' ? 'received' : 'sent'}"><img src="${c.message}" style="max-width:200px;border-radius:12px;"></div>`;
-    else html += `<div class="chat-message ${c.sender === 'admin' ? 'received' : 'sent'}">${c.message}</div>`;
+    chatKnownIds[c.id] = true;
+    const ts = c.created_at || c.createdAt;
+    if (ts && (!chatLastTs || ts > chatLastTs)) chatLastTs = ts;
+    html += chatBubbleHtml(c);
   });
-  container.innerHTML = html; 
+  container.innerHTML = html;
   container.scrollTop = container.scrollHeight;
 }
 
@@ -2634,31 +2738,34 @@ async function processFundSettlements() {
   for (const f of funds) {
     if (f.status === 'active' && f.endTime && new Date(f.endTime).getTime() <= now) {
       const amount = parseFloat(f.amount) || 0;
-      const profit = amount * (parseFloat(f.percent) || 0) / 100;
       if (typeof DB.settleFund === 'function') {
-        // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/endTime คำนวณกำไร (สุ่มผลถ้าแอดมินยังไม่ตั้ง) และเครดิตยอดเงินผ่าน transaction ledger
+        // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/endTime สุ่มยอดกำไร/ขาดทุน (ถ้าแอดมินยังไม่ตั้งผล) และเครดิตยอดเงินผ่าน transaction ledger
         try {
           const r = await DB.settleFund(f.id);
-          const res = (r && r.fund && r.fund.result) || f.result;
-          if (res === 'win') showToast(t('fundSettledWin') + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
-          else showToast(t('fundSettledLoss') + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+          const sf = (r && r.fund) || {};
+          const res = sf.result || f.result;
+          // ใช้ยอดจริงที่ server สุ่มและบันทึกไว้ตอน settle (ไม่คำนวณเองฝั่ง client)
+          const settledProfit = (typeof sf.profit === 'number') ? sf.profit : (res === 'win' ? amount * (parseFloat(f.percent) || 0) / 100 : -amount);
+          if (res === 'win') showToast(t('fundSettledWin') + settledProfit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+          else showToast(t('fundSettledLoss') + Math.abs(settledProfit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
           currentUser = await DB.getCurrentUser();
           settled++;
         } catch (e) { console.error('settleFund failed:', e); }
         continue;
       }
       // Fallback โหมด offline/localStorage (ไม่มี Worker API)
+      const profit = f.result === 'win' ? randomizeProfit(amount * (parseFloat(f.percent) || 0) / 100) : -randomizeLoss(amount);
       if (f.result === 'win') {
         currentUser.balance = (parseFloat(currentUser.balance) || 0) + amount + profit;
         await DB.updateUser(currentUser.id, { balance: currentUser.balance });
         await DB.setCurrentUser(currentUser);
-        showToast(t('fundSettledWin') + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
+        showToast(t('fundSettledWin') + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
       } else if (f.result === 'lose') {
-        showToast(t('fundSettledLoss') + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+        showToast(t('fundSettledLoss') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
       } else {
         continue; // offline mode ไม่สามารถสุ่มผลได้ ปล่อยให้ server settle
       }
-      await DB.updateFund(f.id, { status: 'completed', profit: f.result === 'win' ? profit : -amount, settledAt: new Date().toISOString() });
+      await DB.updateFund(f.id, { status: 'completed', profit: profit, settledAt: new Date().toISOString() });
       settled++;
     }
   }
@@ -2754,14 +2861,15 @@ async function openJoinFund(idx) {
   if (!p) return;
   fundSelectedPkg = p;
   const profit = p.amount * p.percent / 100;
-  const total = p.amount + profit;
+  const totalMin = p.amount + profit;
+  const totalMax = p.amount + profit * 1.8;
   const bal = parseFloat(currentUser.balance) || 0;
   document.getElementById('fundJoinContent').innerHTML = `
     <div class="bg-[#111] p-4 rounded-2xl space-y-2 text-sm">
       <div class="flex justify-between"><span class="text-gray-400">${t('fundInvestAmount')}</span><span class="text-white font-bold">$${Number(p.amount).toLocaleString()}</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${t('fundProfitRate')}</span><span class="text-green-400 font-bold">${p.percent}%</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${t('fundDuration')}</span><span class="text-white font-bold">${p.days} ${t('daysUnit')}</span></div>
-      <div class="flex justify-between border-t border-[#262626] pt-2"><span class="text-gray-400">${t('fundTotalReceive')}</span><span class="text-yellow-400 font-bold">$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
+      <div class="flex justify-between border-t border-[#262626] pt-2"><span class="text-gray-400">${t('fundTotalReceive')}</span><span class="text-yellow-400 font-bold">$${totalMin.toLocaleString('en-US', { minimumFractionDigits: 2 })} – $${totalMax.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${t('fundBalanceLabel')}</span><span class="${bal >= p.amount ? 'text-white' : 'text-red-400'} font-bold">$${bal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
     </div>
     ${bal < p.amount ? '<div class="text-red-400 text-xs text-center">' + t('insufficientDeposit') + '</div>' : ''}`;
@@ -2825,10 +2933,11 @@ async function renderFundList() {
   const C = 2 * Math.PI * 32;
   el.innerHTML = list.map(f => {
     const amount = parseFloat(f.amount) || 0;
-    const profit = amount * (parseFloat(f.percent) || 0) / 100;
-    const total = amount + profit;
     const isDone = f.status === 'completed';
     const isWin = f.result === 'win';
+    // รายการที่ปิดแล้วใช้ยอด profit จริงที่บันทึกตอน settle; รายการ active แสดงค่าประมาณการ base
+    const profit = isDone ? Math.abs(parseFloat(f.profit) || 0) : amount * (parseFloat(f.percent) || 0) / 100;
+    const total = isDone ? (isWin ? amount + profit : amount - profit) : amount + profit;
     const ringColor = isDone ? (isWin ? '#22c55e' : '#ef4444') : '#22c55e';
     let ringText, ringFrac;
     if (isDone) {
@@ -2842,7 +2951,7 @@ async function renderFundList() {
       ringText = now >= end ? 'รอผล' : fmtFundCountdown(end - now);
     }
     const statusLine = isDone
-      ? (isWin ? '<span style="color:#22c55e;">ชนะ +$' + (parseFloat(f.profit) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>' : '<span style="color:#ef4444;">ขาดทุน -$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>')
+      ? (isWin ? '<span style="color:#22c55e;">ชนะ +$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>' : '<span style="color:#ef4444;">ขาดทุน -$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>')
       : 'กำไร: ' + f.percent + '%';
     return `<div class="fund-item">
       <div class="fund-ring-wrap">
@@ -2970,18 +3079,28 @@ async function applySettings() {
   const settings = await DB.getSettings();
   const siteName = settings.siteName || 'Binance Gold';
   document.getElementById('siteTitle').textContent = siteName;
-  document.getElementById('homeSiteTitle').textContent = siteName;
   document.title = siteName + ' - Trading Platform';
   // สีชื่อเว็บไซต์ (แก้จากหลังบ้าน)
   const titleColor = settings.siteTitleColor || '#f0b90b';
   document.getElementById('siteTitle').style.color = titleColor;
-  document.getElementById('homeSiteTitle').style.color = titleColor;
   document.getElementById('siteTitle').style.textShadow = '0 0 10px ' + titleColor + '4d';
-  if (settings.welcomeText) {
-    if (applySettingsCache.welcomeText !== settings.welcomeText) {
-      applySettingsCache.welcomeText = settings.welcomeText;
-      document.getElementById('homeWelcomeText').textContent = settings.welcomeText;
+  // คำโปรยหน้าแรก: ค่าว่าง/null (แอดมินลบออก) = ซ่อน element ทั้งก้อน
+  // default "เริ่มปั่นพอร์ตกันเลย" ใช้เฉพาะตอนที่ยังไม่เคยตั้งค่า (key ไม่มีใน settings)
+  const welcomeEl = document.getElementById('homeWelcomeText');
+  let welcomeVal = settings.welcomeText;
+  if (welcomeVal === undefined || welcomeVal === null) welcomeVal = settings.welcome_text;
+  if (welcomeVal === undefined || welcomeVal === null) welcomeVal = 'เริ่มปั่นพอร์ตกันเลย';
+  welcomeVal = String(welcomeVal).trim();
+  if (welcomeVal) {
+    welcomeEl.style.display = '';
+    if (applySettingsCache.welcomeText !== welcomeVal) {
+      applySettingsCache.welcomeText = welcomeVal;
+      welcomeEl.textContent = welcomeVal;
     }
+  } else {
+    applySettingsCache.welcomeText = '';
+    welcomeEl.textContent = '';
+    welcomeEl.style.display = 'none';
   }
   if (settings.aboutUs) document.getElementById('aboutUsContent').textContent = settings.aboutUs;
   // โลโก้แถบบน: ถ้ามีโลโก้ใหม่ ให้ซ่อนโลโก้เพชรเดิมทันที / ถ้าลบ ให้กลับมาแสดงเหมือนเดิม
