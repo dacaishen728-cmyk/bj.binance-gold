@@ -1523,6 +1523,7 @@ async function confirmLogout() {
     console.warn('[BG] logout API request failed', e);
   } finally {
     currentUser = null;
+    try { ['users','deposits','withdraws','trades','funds','chats','kycs','admins','current_user','settings'].forEach(function(k){ localStorage.removeItem('bg_' + k); }); } catch (e) {}
     try { await DB.setCurrentUser(null); } catch (e) {}
     if (typeof isSupabaseConnected === 'function' && isSupabaseConnected()) {
       try { await supabaseClient.auth.signOut(); } catch (e) {}
@@ -2029,22 +2030,25 @@ async function processTradeSettlements() {
   const now = Date.now();
   let settled = 0;
   for (const tr of trades) {
-    if (tr.status === 'pending' && (tr.result === 'win' || tr.result === 'lose') && tr.endTime && new Date(tr.endTime).getTime() <= now) {
+    if (tr.status === 'pending' && tr.endTime && new Date(tr.endTime).getTime() <= now) {
       const amount = parseFloat(tr.amount) || 0;
       const pct = parseFloat(tr.percent != null ? tr.percent : (tr.package ? tr.package.percent : 0)) || 0;
-      const profit = tr.result === 'win' ? amount * pct / 100 : -amount;
       if (typeof DB.settleTrade === 'function') {
-        // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/เวลา คำนวณกำไร และเครดิตยอดเงินผ่าน transaction ledger
+        // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/เวลา คำนวณกำไร (สุ่มผลถ้าแอดมินยังไม่ตั้ง) และเครดิตยอดเงินผ่าน transaction ledger
         try {
-          await DB.settleTrade(tr.id);
-          if (tr.result === 'win') showToast(t('winTxt') + ' +$' + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
+          const r = await DB.settleTrade(tr.id);
+          const res = (r && r.trade && r.trade.result) || tr.result;
+          const profit = res === 'win' ? amount * pct / 100 : -amount;
+          if (res === 'win') showToast(t('winTxt') + ' +$' + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
           else showToast(t('loseTxt') + ' -$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }));
           currentUser = await DB.getCurrentUser();
           settled++;
         } catch (e) { console.error('settleTrade failed:', e); }
         continue;
       }
-      // Fallback โหมด offline/localStorage (ไม่มี Worker API)
+      // Fallback โหมด offline/localStorage (ไม่มี Worker API) — settle ได้เฉพาะรายการที่แอดมินตั้งผลไว้แล้ว
+      if (tr.result !== 'win' && tr.result !== 'lose') continue;
+      const profit = tr.result === 'win' ? amount * pct / 100 : -amount;
       if (tr.result === 'win') {
         currentUser.balance = (parseFloat(currentUser.balance) || 0) + amount + profit;
         await DB.updateUser(currentUser.id, { balance: currentUser.balance });
@@ -2205,20 +2209,48 @@ async function loadWalletData() {
 }
 
 // ==================== DEPOSIT ====================
+// ย่อ/บีบอัดรูปฝั่ง client ก่อนบันทึกลง D1 (จำกัด ~1MB/row) — เติมพื้นขาวกัน PNG โปร่งใสกลายเป็นพื้นดำ
+function resizeImageFile(file, maxDim, quality) {
+  return new Promise(function(resolve, reject) {
+    if (!file) { reject(new Error('no file')); return; }
+    if (!file.type || file.type.indexOf('image/') !== 0) { reject(new Error('not an image')); return; }
+    const reader = new FileReader();
+    reader.onerror = function() { reject(new Error('read failed')); };
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onerror = function() { reject(new Error('invalid image')); };
+      img.onload = function() {
+        try {
+          let w = img.width, h = img.height;
+          const scale = Math.min(1, maxDim / Math.max(w, h));
+          w = Math.max(1, Math.round(w * scale)); h = Math.max(1, Math.round(h * scale));
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          let url = c.toDataURL('image/jpeg', quality);
+          if (url.length > 900000) url = c.toDataURL('image/jpeg', 0.6);
+          resolve(url);
+        } catch (err) { reject(err); }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function handleFileUpload(input) {
   const file = input.files[0];
   depositSlipFile = file;
   if (file) {
-    const reader = new FileReader();
-    reader.onload = e => { 
-      depositSlipFile = e.target.result; // Store as data URL
-      document.getElementById('uploadPreview').src = e.target.result; 
+    resizeImageFile(file, 1200, 0.8).then(function(url) {
+      depositSlipFile = url; // Store as compressed data URL
+      document.getElementById('uploadPreview').src = url; 
       document.getElementById('uploadPreview').classList.remove('hidden'); 
       document.getElementById('uploadFilename').textContent = file.name; 
       document.getElementById('uploadFilename').classList.remove('hidden'); 
       document.getElementById('fileUploadArea').classList.add('has-file');
-    };
-    reader.readAsDataURL(file);
+    }).catch(function(e) { console.error(e); showToast(t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); });
   }
 }
 
@@ -2370,22 +2402,22 @@ async function handleChatImageUpload(input) {
   }
 
   if (!imageUrl) {
-    const reader = new FileReader();
-    reader.onload = async e => {
+    try {
+      const url = await resizeImageFile(file, 1000, 0.8);
       const chat = { 
         id: 'C' + Math.floor(100000 + Math.random() * 900000).toString(), 
         user_id: currentUser.id, 
         userId: currentUser.id,
         sender: 'user', 
-        message: e.target.result, 
+        message: url, 
         type: 'image', 
         createdAt: new Date().toISOString(),
         created_at: new Date().toISOString()
       };
       await DB.createChat(chat);
       renderChat();
-    };
-    reader.readAsDataURL(file);
+    } catch (e) { console.error(e); showToast(t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); }
+    input.value = '';
     return;
   }
 
@@ -2420,13 +2452,11 @@ async function renderChat() {
 function handleKycFile(input, type) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    kycFiles[type] = e.target.result; // Store as data URL
-    document.getElementById('kyc' + type.charAt(0).toUpperCase() + type.slice(1) + 'Preview').src = e.target.result;
+  resizeImageFile(file, 1200, 0.8).then(function(url) {
+    kycFiles[type] = url; // Store as compressed data URL
+    document.getElementById('kyc' + type.charAt(0).toUpperCase() + type.slice(1) + 'Preview').src = url;
     document.getElementById('kyc' + type.charAt(0).toUpperCase() + type.slice(1) + 'Preview').classList.remove('hidden');
-  };
-  reader.readAsDataURL(file);
+  }).catch(function(e) { console.error(e); showToast(t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); });
 }
 
 async function submitKyc() {
@@ -2507,11 +2537,10 @@ function handleSettingsAvatar(input) {
   const file = input.files[0];
   if (!file) return;
   settingsAvatarFile = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('settingsAvatarImg').src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  resizeImageFile(file, 256, 0.85).then(function(url) {
+    settingsAvatarFile = url; // data URL ที่บีบอัดแล้ว
+    document.getElementById('settingsAvatarImg').src = url;
+  }).catch(function(e) { console.error(e); });
 }
 
 async function saveSettingsProfile() {
@@ -2530,6 +2559,11 @@ async function saveSettingsProfile() {
     } catch(e) { console.log('Avatar upload failed'); }
   }
   if (!avatarUrl && settingsAvatarFile) {
+    if (typeof settingsAvatarFile === 'string' && settingsAvatarFile.startsWith('data:')) {
+      // บีบอัดแล้วจาก handleSettingsAvatar — ใช้ data URL ได้เลย
+      updates.avatar = settingsAvatarFile;
+      settingsAvatarFile = null;
+    } else {
     const reader = new FileReader();
     reader.onload = async e => {
       updates.avatar = e.target.result;
@@ -2543,6 +2577,7 @@ async function saveSettingsProfile() {
     reader.readAsDataURL(settingsAvatarFile);
     settingsAvatarFile = null;
     return;
+    }
   }
   if (avatarUrl) updates.avatar = avatarUrl;
 
@@ -2590,20 +2625,22 @@ async function loadFundData() {
 }
 
 // ปิดผลกองทุนอัตโนมัติเมื่อครบกำหนดเวลา — คืนเงินต้น+กำไรถ้าแอดมินตั้ง "ชนะ" ไว้
+// ถ้าแอดมินยังไม่ได้ตั้งผล server จะสุ่มผลให้ตอน settle (ดูผลได้จากรายการ)
 async function processFundSettlements() {
   if (!currentUser) return 0;
   const funds = await DB.getFundsByUser(currentUser.id);
   const now = Date.now();
   let settled = 0;
   for (const f of funds) {
-    if (f.status === 'active' && f.result && new Date(f.endTime).getTime() <= now) {
+    if (f.status === 'active' && f.endTime && new Date(f.endTime).getTime() <= now) {
       const amount = parseFloat(f.amount) || 0;
       const profit = amount * (parseFloat(f.percent) || 0) / 100;
       if (typeof DB.settleFund === 'function') {
-        // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/endTime คำนวณกำไร และเครดิตยอดเงินผ่าน transaction ledger
+        // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/endTime คำนวณกำไร (สุ่มผลถ้าแอดมินยังไม่ตั้ง) และเครดิตยอดเงินผ่าน transaction ledger
         try {
-          await DB.settleFund(f.id);
-          if (f.result === 'win') showToast(t('fundSettledWin') + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
+          const r = await DB.settleFund(f.id);
+          const res = (r && r.fund && r.fund.result) || f.result;
+          if (res === 'win') showToast(t('fundSettledWin') + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
           else showToast(t('fundSettledLoss') + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }));
           currentUser = await DB.getCurrentUser();
           settled++;
@@ -2616,8 +2653,10 @@ async function processFundSettlements() {
         await DB.updateUser(currentUser.id, { balance: currentUser.balance });
         await DB.setCurrentUser(currentUser);
         showToast(t('fundSettledWin') + (amount + profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
-      } else {
+      } else if (f.result === 'lose') {
         showToast(t('fundSettledLoss') + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+      } else {
+        continue; // offline mode ไม่สามารถสุ่มผลได้ ปล่อยให้ server settle
       }
       await DB.updateFund(f.id, { status: 'completed', profit: f.result === 'win' ? profit : -amount, settledAt: new Date().toISOString() });
       settled++;
@@ -3062,7 +3101,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     bankSelect.appendChild(opt); 
   });
 
-  // Real-time balance sync: refresh every 2 seconds when logged in
+  // Real-time balance sync: refresh every 30 seconds when logged in
+  // (previously ~3 API requests every 10s per member sat right at the server
+  // rate limit; any extra click pushed the IP into 429 for 15 minutes)
   setInterval(async () => {
     if (currentUser && !document.hidden) {
       try {
@@ -3088,7 +3129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       } catch(e) { /* network hiccup — ข้ามรอบนี้ รอรอบถัดไป */ }
     }
-  }, 10000);
+  }, 30000);
 
   // Listen for storage changes from other tabs (admin panel)
   window.addEventListener('storage', async (e) => {

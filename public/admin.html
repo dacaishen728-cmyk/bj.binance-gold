@@ -677,6 +677,37 @@ let autoRefreshInterval = null;
 let pendingNotifications = { deposits: false, withdraws: false, trades: false, kyc: false, chat: false };
 let logoImages = { 1: null, 2: null };
 
+// ย่อ/บีบอัดรูปฝั่ง client ก่อนบันทึกลง D1 (จำกัด ~1MB/row และ base64 เพิ่มขนาด ~33%)
+// คืน data URL (JPEG) — เติมพื้นขาวก่อนเพื่อไม่ให้ PNG โปร่งใสกลายเป็นพื้นดำ (QR ต้องอ่านได้)
+function resizeImageFile(file, maxDim, quality) {
+  return new Promise(function(resolve, reject) {
+    if (!file) { reject(new Error('ไม่ได้เลือกไฟล์')); return; }
+    if (!file.type || file.type.indexOf('image/') !== 0) { reject(new Error('ไฟล์ไม่ใช่รูปภาพ')); return; }
+    const reader = new FileReader();
+    reader.onerror = function() { reject(new Error('อ่านไฟล์ไม่สำเร็จ')); };
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onerror = function() { reject(new Error('ไฟล์รูปภาพเสียหายหรือไม่รองรับ')); };
+      img.onload = function() {
+        try {
+          let w = img.width, h = img.height;
+          const scale = Math.min(1, maxDim / Math.max(w, h));
+          w = Math.max(1, Math.round(w * scale)); h = Math.max(1, Math.round(h * scale));
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          let url = c.toDataURL('image/jpeg', quality);
+          if (url.length > 900000) url = c.toDataURL('image/jpeg', 0.6); // กันรูปใหญ่เกิน D1 row limit
+          resolve(url);
+        } catch (err) { reject(new Error('ประมวลผลรูปไม่สำเร็จ: ' + ((err && err.message) || err))); }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 const ADMIN_TRANSLATIONS = {
 th: {
   dashboard: 'แดชบอร์ด', users: 'จัดการสมาชิก', deposits: 'รายการฝากเงิน', withdraws: 'รายการถอนเงิน', trades: 'จัดการการซื้อขาย', fund: 'จัดการกองทุน', kyc: 'ยืนยันตัวตน (KYC)', chat: 'แชทลูกค้า', admins: 'ผู้ดูแลระบบ', p2p: 'ตั้งค่า P2P', settings: 'ตั้งค่าเว็บไซต์', logout: 'ออกจากระบบ',
@@ -1003,6 +1034,9 @@ async function saveHomeText() {
 
 function startAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  // 30s interval: 5s previously fired 8-15 API requests per cycle
+  // (updateBadges + processAutoTrades + active tab loader) and tripped the
+  // server rate limit within minutes, making data/buttons appear broken.
   autoRefreshInterval = setInterval(() => {
     if (document.hidden) return; // แท็บไม่ได้เปิดอยู่ — พัก polling ชั่วคราว
     updateBadges();
@@ -1019,7 +1053,7 @@ function startAutoRefresh() {
       if (tabId === 'kyc') loadKycs();
       if (tabId === 'chat') { loadChatUsers(); if (currentChatUserId) loadAdminChatMessages(); }
     }
-  }, 5000);
+  }, 30000);
 }
 
 async function processAutoTrades() {
@@ -1223,9 +1257,18 @@ async function clearUserTradeSetting() {
 }
 
 async function deleteUser(userId) {
-  if (!confirm('ต้องการปิดใช้งานสมาชิกนี้?')) return;
-  try { await DB.updateUser(userId,{status:'disabled'}); showToast('ปิดใช้งานสมาชิกสำเร็จ','success'); loadUsers(); loadDashboard(); }
-  catch(e) { showToast('ไม่สามารถจัดการสมาชิกได้','alert'); }
+  const user = (await DB.getUsers()).find(u => u.id === userId);
+  const label = user ? (user.name || user.phone || userId) : userId;
+  if (!confirm('ต้องการลบสมาชิก "' + label + '" ถาวร?\nประวัติซื้อขาย กองทุน ฝาก/ถอน แชท และ KYC ทั้งหมดของสมาชิกนี้จะถูกลบและกู้คืนไม่ได้')) return;
+  try {
+    if (typeof DB.deleteUser !== 'function') throw new Error('ระบบยังไม่รองรับการลบสมาชิก');
+    await DB.deleteUser(userId);
+    showToast('ลบสมาชิกสำเร็จ', 'success');
+    loadUsers(); loadDashboard();
+  } catch (e) {
+    console.error(e);
+    showToast('ลบสมาชิกไม่สำเร็จ: ' + ((e && e.message) || 'เกิดข้อผิดพลาด กรุณาลองใหม่'), 'alert');
+  }
 }
 
 // ==================== DEPOSITS ====================
@@ -1536,14 +1579,14 @@ async function sendAdminImage() {
   }
 
   if (!imageUrl) {
-    const reader = new FileReader();
-    reader.onload = async e => {
+    try {
+      const url = await resizeImageFile(file, 1000, 0.8);
       const chat = { 
         id: 'chat_' + Date.now(), 
         user_id: currentChatUserId, 
         userId: currentChatUserId,
         sender: 'admin', 
-        message: e.target.result, 
+        message: url, 
         type: 'image', 
         createdAt: new Date().toISOString(),
         created_at: new Date().toISOString()
@@ -1551,8 +1594,8 @@ async function sendAdminImage() {
       await DB.createChat(chat);
       loadAdminChatMessages(); 
       loadChatUsers();
-    };
-    reader.readAsDataURL(file);
+    } catch(e) { console.error(e); showToast('ส่งรูปไม่สำเร็จ: ' + ((e && e.message) || e), 'alert'); }
+    input.value = '';
     return;
   }
 
@@ -1642,14 +1685,14 @@ async function loadP2PSettings() {
 function handleP2PQRUpload(input) {
   const file = input.files[0]; 
   if (!file) return;
-  const reader = new FileReader(); 
-  reader.onload = e => { 
-    logoImages.p2p = e.target.result; 
+  resizeImageFile(file, 512, 0.9).then(function(url) {
+    logoImages.p2p = url; 
     const img = document.getElementById('p2pQrPreview'); 
-    img.querySelector('img').src = e.target.result; 
+    img.querySelector('img').src = url; 
     img.classList.remove('hidden'); 
-  }; 
-  reader.readAsDataURL(file);
+  }).catch(function(e) {
+    showToast('อัพโหลด QR ไม่สำเร็จ: ' + ((e && e.message) || e), 'alert');
+  }).finally(function() { input.value = ''; });
 }
 
 async function saveP2PSettings() {
@@ -1693,22 +1736,25 @@ async function loadSettings() {
 function handleLogoUpload(input, num) {
   const file = input.files[0]; 
   if (!file) return;
-  const reader = new FileReader(); 
-  reader.onload = async e => { 
-    logoImages[num] = e.target.result; 
-    const img = document.getElementById('logoPreview' + num); 
-    img.src = e.target.result; 
-    img.classList.remove('hidden');
-    // บันทึกทันที — โลโก้ใหม่จะแทนที่โลโก้เดิมบนหน้าเว็บโดยไม่ต้องกดบันทึกซ้ำ
-    const up = {};
-    up[num === 1 ? 'logoUrl1' : 'logoUrl2'] = e.target.result;
-    await DB.updateSettings(up);
-    showToast('เปลี่ยนโลโก้สำเร็จ โลโก้ใหม่แทนที่โลโก้เดิมแล้ว', 'success');
-  }; 
-  reader.readAsDataURL(file);
+  resizeImageFile(file, 800, 0.85).then(async function(url) {
+    try {
+      logoImages[num] = url; 
+      const img = document.getElementById('logoPreview' + num); 
+      img.src = url; 
+      img.classList.remove('hidden');
+      // บันทึกทันที — โลโก้ใหม่จะแทนที่โลโก้เดิมบนหน้าเว็บโดยไม่ต้องกดบันทึกซ้ำ
+      const up = {};
+      up[num === 1 ? 'logoUrl1' : 'logoUrl2'] = url;
+      await DB.updateSettings(up);
+      showToast('เปลี่ยนโลโก้สำเร็จ โลโก้ใหม่แทนที่โลโก้เดิมแล้ว', 'success');
+    } catch(e) { console.error(e); showToast('บันทึกโลโก้ไม่สำเร็จ: ' + ((e && e.message) || e), 'alert'); }
+  }).catch(function(e) {
+    showToast('อัพโหลดโลโก้ไม่สำเร็จ: ' + ((e && e.message) || e), 'alert');
+  }).finally(function() { input.value = ''; });
 }
 
 async function deleteLogo(num) {
+  try {
   logoImages[num] = null; 
   const img = document.getElementById('logoPreview' + num); 
   img.src = ''; 
@@ -1718,29 +1764,34 @@ async function deleteLogo(num) {
   settings[key] = null;
   await DB.updateSettings(settings);
   showToast('ลบโลโก้แล้ว', 'alert');
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== HERO BACKGROUND SLIDES (5 รูป) ====================
 function handleHeroUpload(input, num) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    const up = {};
-    up['heroImage' + num] = e.target.result;
-    await DB.updateSettings(up);
-    loadHeroImages();
-    showToast('อัพโหลดรูปพื้นหลังรูปที่ ' + num + ' สำเร็จ', 'success');
-  };
-  reader.readAsDataURL(file);
+  resizeImageFile(file, 1600, 0.8).then(async function(url) {
+    try {
+      const up = {};
+      up['heroImage' + num] = url;
+      await DB.updateSettings(up);
+      loadHeroImages();
+      showToast('อัพโหลดรูปพื้นหลังรูปที่ ' + num + ' สำเร็จ', 'success');
+    } catch(e) { console.error(e); showToast('บันทึกรูปที่ ' + num + ' ไม่สำเร็จ: ' + ((e && e.message) || e), 'alert'); }
+  }).catch(function(e) {
+    showToast('อัพโหลดรูปที่ ' + num + ' ไม่สำเร็จ: ' + ((e && e.message) || e), 'alert');
+  }).finally(function() { input.value = ''; });
 }
 
 async function deleteHeroImage(num) {
+  try {
   const up = {};
   up['heroImage' + num] = null; // ลบแล้วหน้าแรกจะกลับเป็นพื้นหลังสีส้มเดิม
   await DB.updateSettings(up);
   loadHeroImages();
   showToast('ลบรูปที่ ' + num + ' แล้ว กลับเป็นพื้นหลังสีส้ม', 'alert');
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 async function loadHeroImages() {
@@ -1758,21 +1809,23 @@ async function loadHeroImages() {
 async function handleSiteBgUpload(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    await DB.updateSettings({ siteBgImage: e.target.result });
+  try {
+    const url = await resizeImageFile(file, 1600, 0.8);
+    await DB.updateSettings({ siteBgImage: url });
     const img = document.getElementById('siteBgPreview');
-    img.src = e.target.result; img.classList.remove('hidden');
+    img.src = url; img.classList.remove('hidden');
     showToast(tAdmin('bgSaved'), 'success');
-  };
-  reader.readAsDataURL(file);
+  } catch(e) { console.error(e); showToast('อัพโหลดพื้นหลังไม่สำเร็จ: ' + ((e && e.message) || e), 'alert'); }
+  finally { input.value = ''; }
 }
 
 async function deleteSiteBg() {
+  try {
   await DB.updateSettings({ siteBgImage: '' });
   const img = document.getElementById('siteBgPreview');
   img.src = ''; img.classList.add('hidden');
   showToast(tAdmin('bgDeleted'), 'success');
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 async function saveSettings() {
