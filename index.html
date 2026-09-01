@@ -1228,7 +1228,7 @@ async function getTradePackages() {
   try { pkgs = JSON.parse(settings.tradePackages || 'null'); } catch(e) {}
   if (!Array.isArray(pkgs) || pkgs.length === 0) {
     pkgs = TRADE_DEFAULT_PACKAGES.map(p => ({...p}));
-    await DB.updateSettings({ tradePackages: JSON.stringify(pkgs) });
+    try { await DB.updateSettings({ tradePackages: JSON.stringify(pkgs) }); } catch(e) { /* member ไม่มีสิทธิ์เขียน settings — ใช้ค่า default ต่อได้ปกติ */ }
   }
   return pkgs;
 }
@@ -1951,7 +1951,7 @@ async function openTradeRunning(tradeId) {
   openModal('tradeRunningModal');
   await tickTradeRunning();
   if (trunTimer) clearInterval(trunTimer);
-  trunTimer = setInterval(tickTradeRunning, 1000);
+  trunTimer = setInterval(function(){ if(!document.hidden) tickTradeRunning(); }, 2500);
 }
 
 async function tickTradeRunning() {
@@ -2575,7 +2575,7 @@ async function getFundPackages() {
   try { pkgs = JSON.parse(settings.fundPackages || 'null'); } catch(e) {}
   if (!Array.isArray(pkgs) || pkgs.length === 0) {
     pkgs = FUND_DEFAULT_PACKAGES.slice();
-    await DB.updateSettings({ fundPackages: JSON.stringify(pkgs) });
+    try { await DB.updateSettings({ fundPackages: JSON.stringify(pkgs) }); } catch(e) { /* member ไม่มีสิทธิ์เขียน settings — ใช้ค่า default ต่อได้ปกติ */ }
   }
   return pkgs;
 }
@@ -2835,9 +2835,14 @@ function startFundTicker() {
   fundTicker = setInterval(updateFundCountdowns, 1000);
 }
 
+let fundCountdownCache = { t: 0, funds: [] };
 async function updateFundCountdowns() {
   if (!currentUser || !document.getElementById('fund').classList.contains('active-tab')) return;
-  const funds = (await DB.getFundsByUser(currentUser.id)).filter(f => f.status === 'active');
+  // ดึงข้อมูลจาก server มากสุดทุก 15 วินาที — วินาทีอื่นๆ นับถอยหลังจาก cache ในเครื่อง (ลดภาระ network 90%+)
+  if (Date.now() - fundCountdownCache.t > 15000) {
+    try { fundCountdownCache = { t: Date.now(), funds: (await DB.getFundsByUser(currentUser.id)).filter(f => f.status === 'active') }; } catch(e) {}
+  }
+  const funds = fundCountdownCache.funds;
   const C = 2 * Math.PI * 32;
   let anyExpired = false;
   funds.forEach(f => {
@@ -3039,7 +3044,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadTradePackages();
   startPriceStream(); // WebSocket streaming: ราคา Crypto อัปเดตวินาทีต่อวินาที
   setInterval(fetchRealPrices, 10000); // REST สำหรับ Forex/ทองคำ/ดัชนี + สำรอง Crypto ทุก 10 วินาที
-  setInterval(applySettings, 3000); // sync การตั้งค่าจากหลังบ้าน (โลโก้/ชื่อเว็บ/สี/รูปสไลด์) อัตโนมัติ
+  setInterval(function(){ if(!document.hidden) applySettings(); }, 30000); // sync การตั้งค่าจากหลังบ้าน (โลโก้/ชื่อเว็บ/สี/รูปสไลด์) อัตโนมัติ
 
   if (currentUser) { 
     loadWalletData(); 
@@ -3059,13 +3064,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Real-time balance sync: refresh every 2 seconds when logged in
   setInterval(async () => {
-    if (currentUser) {
+    if (currentUser && !document.hidden) {
+      try {
       // ปิดผลกองทุน/เทรดที่ครบเวลา (ทำงานทุกหน้า ไม่ต้องเปิดหน้าค้างไว้)
       const settled = await processFundSettlements();
       const settledTrades = await processTradeSettlements();
       if (settled > 0 || settledTrades > 0) loadWalletData();
-      const allUsers = await DB.getUsers();
-      const freshUser = allUsers.find(u => u.id === currentUser.id);
+      const freshUser = await DB.getCurrentUser();
       if (freshUser) {
         currentUser = freshUser;
         await DB.setCurrentUser(currentUser);
@@ -3081,8 +3086,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           loadTradeHistory();
         }
       }
+      } catch(e) { /* network hiccup — ข้ามรอบนี้ รอรอบถัดไป */ }
     }
-  }, 2000);
+  }, 10000);
 
   // Listen for storage changes from other tabs (admin panel)
   window.addEventListener('storage', async (e) => {
@@ -3131,7 +3137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   // ครอบคลุม setInterval(applySettings, 3000) เดิมที่ถือ reference ฟังก์ชันเดิมไว้ + ทำงานกับธีมขาว/ดำ/อัตโนมัติ
   document.addEventListener('DOMContentLoaded', refreshCtaColors);
-  setInterval(refreshCtaColors, 3000);
+  setInterval(function(){ if(!document.hidden) refreshCtaColors(); }, 30000);
 })();
 </script>
 <script src="/api-db.js"></script>

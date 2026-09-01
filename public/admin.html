@@ -818,6 +818,13 @@ function showToast(message, type, duration) {
   setTimeout(() => toast.classList.remove('show'), duration);
 }
 
+async function adminAction(btn, fn, okMsg) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+  try { await fn(); if (okMsg) showToast(okMsg); }
+  catch (e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่', 'alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
+}
+
 function playNotificationSound() {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -938,7 +945,7 @@ async function checkAdminAuth() {
 
 // จำกัดสิทธิ์: ผู้ดูแลระบบที่ถูกเพิ่ม (ไม่ใช่ superadmin) ไม่เห็นเมนู ผู้ดูแลระบบ / ตั้งค่า P2P / ตั้งค่าเว็บไซต์
 function applyAdminRoleRestrictions() {
-  const isSuper = !currentAdmin || currentAdmin.role === 'superadmin';
+  const isSuper = !!(currentAdmin && currentAdmin.role === 'superadmin');
   ['menuAdmins', 'menuP2P', 'menuSettings'].forEach(id => {
     const span = document.getElementById(id);
     const item = span ? span.closest('.sidebar-item') : null;
@@ -983,6 +990,7 @@ async function openHomeTextEditor() {
   openModal('homeTextModal');
 }
 async function saveHomeText() {
+  try {
   const siteName = document.getElementById('homeEditSiteName').value;
   const welcomeText = document.getElementById('homeEditWelcome').value;
   await DB.updateSettings({ siteName: siteName, welcomeText: welcomeText, site_name: siteName, welcome_text: welcomeText });
@@ -990,11 +998,13 @@ async function saveHomeText() {
   if (sidebarName) sidebarName.textContent = siteName || 'Binance Gold';
   closeModal('homeTextModal');
   showToast('บันทึกข้อความหน้าแรกสำเร็จ', 'success');
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 function startAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshInterval = setInterval(() => {
+    if (document.hidden) return; // แท็บไม่ได้เปิดอยู่ — พัก polling ชั่วคราว
     updateBadges();
     processAutoTrades();
     const activeTab = document.querySelector('.tab-content.active');
@@ -1009,7 +1019,7 @@ function startAutoRefresh() {
       if (tabId === 'kyc') loadKycs();
       if (tabId === 'chat') { loadChatUsers(); if (currentChatUserId) loadAdminChatMessages(); }
     }
-  }, 3000);
+  }, 5000);
 }
 
 async function processAutoTrades() {
@@ -1156,6 +1166,7 @@ async function editUser(userId) {
 }
 
 async function saveUserEdit() {
+  try {
   const updates = { 
     name: document.getElementById('editUserName').value.trim(),
     phone: document.getElementById('editUserPhone').value.trim(),
@@ -1170,6 +1181,7 @@ async function saveUserEdit() {
   if (newPass) updates.password = newPass;
   await DB.updateUser(editingUserId, updates);
   showToast('แก้ไขสมาชิกสำเร็จ', 'success'); closeModal('editUserModal'); loadUsers(); loadDashboard();
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== PER-USER TRADE RESULT (ปุ่ม 🎯 ในตารางสมาชิก) ====================
@@ -1244,12 +1256,12 @@ function viewDepositSlip(url) {
 }
 
 async function approveDeposit(id) {
-  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการฝากสำเร็จ','success'); loadDeposits(); loadDashboard(); }
+  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการฝากสำเร็จ','success'); loadDeposits(); updateBadges(); }
   catch(e) { showToast('ไม่สามารถอนุมัติรายการได้','alert'); }
 }
 
 async function rejectDeposit(id) {
-  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); showToast('ปฏิเสธการฝาก','alert'); loadDeposits(); loadDashboard(); }
+  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); showToast('ปฏิเสธการฝาก','alert'); loadDeposits(); updateBadges(); }
   catch(e) { showToast('ไม่สามารถปฏิเสธรายการได้','alert'); }
 }
 
@@ -1293,12 +1305,12 @@ async function loadWithdraws() {
 }
 
 async function approveWithdraw(id) {
-  try { await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการถอนสำเร็จ','success'); loadWithdraws(); loadDashboard(); }
+  try { await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการถอนสำเร็จ','success'); loadWithdraws(); updateBadges(); }
   catch(e) { showToast('ไม่สามารถอนุมัติรายการได้','alert'); }
 }
 
 async function rejectWithdraw(id) {
-  try { const out=await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); if(out.user){} showToast('ปฏิเสธการถอน - คืนเงินแล้ว','alert'); loadWithdraws(); loadDashboard(); }
+  try { const out=await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); if(out.user){} showToast('ปฏิเสธการถอน - คืนเงินแล้ว','alert'); loadWithdraws(); updateBadges(); }
   catch(e) { showToast('ไม่สามารถปฏิเสธรายการได้','alert'); }
 }
 
@@ -1364,6 +1376,7 @@ async function loadTrades() {
 
 // ตั้งผลชนะ/แพ้ล่วงหน้า — เว็บจะแสดงผลอัตโนมัติเมื่อครบเวลาที่กำหนด (ถ้าครบแล้ว ปิดผลทันที)
 async function setTradeResultNow(tradeId, result) {
+  try {
   const tr = (await DB.getTrades()).find(x => x.id === tradeId);
   if (!tr || tr.status !== 'pending') return;
   await DB.updateTrade(tradeId, { result: result, resultSetAt: new Date().toISOString() });
@@ -1375,6 +1388,7 @@ async function setTradeResultNow(tradeId, result) {
     showToast(tAdmin('resPreset') + ' "' + (result === 'win' ? tAdmin('winTxt') : tAdmin('loseTxt')) + '" — ' + tAdmin('resAutoAt'), 'success');
   }
   loadTrades(); loadDashboard(); updateBadges();
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== KYC ====================
@@ -1424,19 +1438,23 @@ function showImagePreview(url) {
 }
 
 async function approveKyc(id) { 
+  try {
   const kyc = (await DB.getKycs()).find(k => k.id === id); 
   if (!kyc) return; 
   await DB.updateKyc(id, { status: 'approved' }); 
   await DB.updateUser(kyc.user_id || kyc.userId, { kycStatus: 'verified', kyc_status: 'verified' });
-  showToast('อนุมัติ KYC สำเร็จ', 'success'); loadKycs(); 
+  showToast('อนุมัติ KYC สำเร็จ', 'success'); loadKycs();
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 async function rejectKyc(id) { 
+  try {
   const kyc = (await DB.getKycs()).find(k => k.id === id); 
   if (!kyc) return; 
   await DB.updateKyc(id, { status: 'rejected' }); 
   await DB.updateUser(kyc.user_id || kyc.userId, { kycStatus: 'rejected', kyc_status: 'rejected' });
-  showToast('ปฏิเสธ KYC', 'alert'); loadKycs(); 
+  showToast('ปฏิเสธ KYC', 'alert'); loadKycs();
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== CHAT ====================
@@ -1554,12 +1572,14 @@ async function sendAdminImage() {
 }
 
 async function deleteUserChatHistory() { 
+  try {
   if (!currentChatUserId) return; 
   if (!confirm('ลบประวัติแชท?')) return; 
   await DB.deleteChatsByUser(currentChatUserId);
   showToast('ลบแชทสำเร็จ', 'success'); 
   loadAdminChatMessages(); 
   loadChatUsers(); 
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== ADMINS ====================
@@ -1569,6 +1589,7 @@ async function loadAdmins() {
 }
 
 async function addAdmin() {
+  try {
   const username = document.getElementById('newAdminUsername').value.trim(); 
   const name = document.getElementById('newAdminName').value.trim();
   const password = document.getElementById('newAdminPassword').value; 
@@ -1593,13 +1614,16 @@ async function addAdmin() {
   showToast('เพิ่มผู้ดูแลสำเร็จ', 'success'); 
   closeModal('addAdminModal'); 
   loadAdmins();
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 async function deleteAdmin(id) { 
+  try {
   if (!confirm('ลบผู้ดูแล?')) return; 
   await DB.deleteAdmin(id); 
   showToast('ลบสำเร็จ', 'success'); 
   loadAdmins(); 
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== P2P SETTINGS ====================
@@ -1629,6 +1653,7 @@ function handleP2PQRUpload(input) {
 }
 
 async function saveP2PSettings() {
+  try {
   const updates = {
     p2pAddress: document.getElementById('p2pAddress').value,
     p2p_withdraw_fee: parseFloat(document.getElementById('p2pWithdrawFee').value) || 1,
@@ -1637,6 +1662,7 @@ async function saveP2PSettings() {
   if (logoImages.p2p) updates.p2pQrCode = logoImages.p2p;
   await DB.updateSettings(updates);
   showToast('บันทึกการตั้งค่า P2P สำเร็จ', 'success');
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== SETTINGS ====================
@@ -1750,6 +1776,7 @@ async function deleteSiteBg() {
 }
 
 async function saveSettings() {
+  try {
   const updates = {
     withdrawFee: parseFloat(document.getElementById('settingsWithdrawFee').value) || 1,
     minWithdraw: parseFloat(document.getElementById('settingsMinWithdraw').value) || 10,
@@ -1765,6 +1792,7 @@ async function saveSettings() {
   var sidebarName = document.getElementById('adminSidebarSiteName');
   if (sidebarName) sidebarName.textContent = updates.siteName || 'Binance Gold';
   showToast('บันทึกการตั้งค่าสำเร็จ', 'success');
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== REALTIME CALLBACKS ====================
@@ -1921,6 +1949,7 @@ function removePackageRow(index) {
 }
 
 async function savePackages() {
+  try {
   const percents = document.querySelectorAll('.package-percent');
   const minutes = document.querySelectorAll('.package-minutes');
   const amounts = document.querySelectorAll('.package-amount');
@@ -1935,6 +1964,7 @@ async function savePackages() {
   currentPackages = newPackages;
   await DB.updateSettings({ tradePackages: JSON.stringify(currentPackages) });
   showToast(tAdmin('pkgSaved'), 'success');
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== FUND ADMIN (จัดการกองทุน) ====================
@@ -1977,6 +2007,7 @@ function addFundPackageRow() { currentFundPackages.push({ amount: 0, percent: 0,
 function removeFundPackageRow(index) { currentFundPackages.splice(index, 1); renderFundPackagesAdmin(); }
 
 async function saveFundPackages() {
+  try {
   const amounts = document.querySelectorAll('.fund-pkg-amount');
   const percents = document.querySelectorAll('.fund-pkg-percent');
   const daysInputs = document.querySelectorAll('.fund-pkg-days');
@@ -1987,6 +2018,7 @@ async function saveFundPackages() {
   currentFundPackages = arr;
   await DB.updateSettings({ fundPackages: JSON.stringify(arr) });
   showToast('บันทึกแพ็คเกจกองทุนสำเร็จ', 'success');
+  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 async function loadFundInvestments() {

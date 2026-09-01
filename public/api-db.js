@@ -30,6 +30,7 @@
     createDeposit:function(d){return apiFetch('/api/deposits',{method:'POST',body:d, idempotencyKey:idKey('deposit')});},
     updateDeposit:function(id,up){return apiFetch('/api/deposits/'+enc(id),{method:'PUT',body:up});},
     setDeposits:function(){return Promise.resolve();},
+    setUsers:function(){return Promise.resolve();},
     getWithdraws:function(){return apiFetch('/api/withdraws');},
     getWithdrawsByUser:function(){return apiFetch('/api/withdraws');},
     createWithdraw:function(w){var fee=1;return apiFetch('/api/settings').then(function(s){fee=Number(s.withdrawFee||s.withdraw_fee||1);return apiFetch('/api/wallet/withdraw',{method:'POST',body:Object.assign({},w,{fee:fee}),idempotencyKey:idKey('withdraw')});}).then(function(r){if(r.user){memoryUser=r.user;try{if(typeof currentUser!=='undefined')currentUser=r.user;}catch(e){}}return r.withdraw;});},
@@ -51,7 +52,7 @@
     getChats:function(){return apiFetch('/api/chats');},
     getChatsByUser:function(){return apiFetch('/api/chats');},
     createChat:function(c){return apiFetch('/api/chats',{method:'POST',body:c,idempotencyKey:idKey('chat')});},
-    deleteChatsByUser:function(){return Promise.reject(new Error('unsupported'));},
+    deleteChatsByUser:function(userId){return apiFetch('/api/admin/chats?user_id='+enc(userId),{method:'DELETE'});},
     setChats:function(){return Promise.resolve();},
     getKycs:function(){return apiFetch('/api/kycs');},
     createKyc:function(k){return apiFetch('/api/kycs',{method:'POST',body:k,idempotencyKey:idKey('kyc')});},
@@ -97,12 +98,12 @@
     window.doLogin=async function(){
       var u=document.getElementById('loginUsername')?.value.trim(), p=document.getElementById('loginPassword')?.value;
       if(!u||!p){document.getElementById('loginError')?.classList.add('show');return;}
-      try{var r=await apiFetch('/api/admin/login',{method:'POST',body:{username:u,password:p}});window.isAdminLoggedIn=true;window.currentAdmin=r.admin;document.getElementById('loginPage').style.display='none';document.getElementById('adminPanel').classList.add('show');document.getElementById('adminDisplayName').textContent=r.admin.name||r.admin.username;showToast('เข้าสู่ระบบสำเร็จ','success');loadDashboard();startAutoRefresh();updateAdminLanguage();applyAdminRoleRestrictions();}
+      try{var r=await apiFetch('/api/admin/login',{method:'POST',body:{username:u,password:p}});window.isAdminLoggedIn=true;window.currentAdmin=r.admin;try{if(typeof currentAdmin!=='undefined')currentAdmin=r.admin;}catch(e){}document.getElementById('loginPage').style.display='none';document.getElementById('adminPanel').classList.add('show');document.getElementById('adminDisplayName').textContent=r.admin.name||r.admin.username;showToast('เข้าสู่ระบบสำเร็จ','success');loadDashboard();startAutoRefresh();updateAdminLanguage();applyAdminRoleRestrictions();}
       catch(e){document.getElementById('loginError')?.classList.add('show');}
     };
   }
   window.checkAdminAuth=async function(){
-    try{var r=await apiFetch('/api/admin/me');window.isAdminLoggedIn=true;window.currentAdmin=r.admin;document.getElementById('loginPage').style.display='none';document.getElementById('adminPanel').classList.add('show');document.getElementById('adminDisplayName').textContent=r.admin.name||r.admin.username;setTimeout(function(){loadDashboard();startAutoRefresh();updateAdminLanguage();applyAdminRoleRestrictions();},50);}
+    try{var r=await apiFetch('/api/admin/me');window.isAdminLoggedIn=true;window.currentAdmin=r.admin;try{if(typeof currentAdmin!=='undefined')currentAdmin=r.admin;}catch(e){}document.getElementById('loginPage').style.display='none';document.getElementById('adminPanel').classList.add('show');document.getElementById('adminDisplayName').textContent=r.admin.name||r.admin.username;setTimeout(function(){loadDashboard();startAutoRefresh();updateAdminLanguage();applyAdminRoleRestrictions();},50);}
     catch(e){window.isAdminLoggedIn=false;window.currentAdmin=null;document.getElementById('loginPage').style.display='flex';document.getElementById('adminPanel').classList.remove('show');}
   };
   window.logoutAdmin=async function(){try{await apiFetch('/api/admin/logout',{method:'POST'});}finally{window.isAdminLoggedIn=false;window.currentAdmin=null;window.location.reload();}};
