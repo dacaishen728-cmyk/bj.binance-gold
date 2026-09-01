@@ -232,6 +232,9 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 .theme-switch-btn { width:42px; height:42px; min-width:42px; padding:0 !important; display:inline-flex; align-items:center; justify-content:center; gap:0 !important; }
 .theme-switch-btn #adminThemeIcon { font-size:17px; }
 .theme-switch-btn #adminThemeLabel { display:none !important; }
+/* Sound alert indicator: ไอคอนกะพริบขณะเสียงแจ้งเตือนกำลังดัง */
+@keyframes soundAlertBlink { 0%,100% { opacity:1; color:#facc15; } 50% { opacity:.35; } }
+#adminSoundBtn.sound-alert-active #adminSoundIcon { animation: soundAlertBlink .8s infinite; color:#facc15; }
 </style>
 </head>
 <body>
@@ -302,6 +305,7 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 <div class="flex items-center gap-4">
 <button type="button" id="adminThemeToggle" class="theme-switch-btn" onclick="toggleAdminTheme()" aria-label="สลับโหมดสี" title="สลับโหมดสี"><i id="adminThemeIcon" class="fas fa-moon" aria-hidden="true"></i><span id="adminThemeLabel" class="sr-only">โหมดมืด</span></button>
 <button type="button" id="adminRefreshBtn" class="theme-switch-btn" onclick="refreshAdminData()" aria-label="รีเฟรชข้อมูล" title="รีเฟรชข้อมูลแท็บนี้"><i id="adminRefreshIcon" class="fas fa-sync-alt" aria-hidden="true"></i><span class="sr-only">รีเฟรช</span></button>
+<button type="button" id="adminSoundBtn" class="theme-switch-btn" onclick="toggleAdminSound()" aria-label="เปิด/ปิดเสียงแจ้งเตือน" title="เปิด/ปิดเสียงแจ้งเตือน"><i id="adminSoundIcon" class="fas fa-volume-up" aria-hidden="true"></i><span class="sr-only">เสียงแจ้งเตือน</span></button>
 <div class="lang-switcher" style="position:relative;">
 <button id="adminLangBtn" onclick="toggleAdminLangMenu(event)" style="display:flex;align-items:center;gap:6px;"><span id="adminLangFlag" style="font-size:18px;">🇹🇭</span><span id="adminLangCode">TH</span><i class="fas fa-chevron-down" style="font-size:9px;"></i></button>
 <div id="adminLangMenu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:#161616;border:1px solid #333;border-radius:12px;padding:6px;z-index:200;min-width:160px;box-shadow:0 10px 30px rgba(0,0,0,.6);flex-direction:column;gap:4px;">
@@ -614,7 +618,7 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 <div class="card lg:col-span-2">
 <h3 class="font-bold mb-4 text-white"><i class="fas fa-info-circle text-blue-400 mr-2"></i><span data-i18n="siteInfoCard">ข้อมูลเว็บไซต์</span></h3>
 <div class="space-y-4">
-<div class="form-group"><label data-i18n="lblSiteName">ชื่อเว็บไซต์</label><input id="settingsSiteName" placeholder="Binance Gold" type="text"/></div>
+<div class="form-group"><label data-i18n="lblSiteName">ชื่อเว็บไซต์ (แสดงข้างโลโก้)</label><input id="settingsSiteName" placeholder="Binance Gold" type="text"/></div>
 <div class="form-group"><label data-i18n="lblSiteColor">สีชื่อเว็บไซต์</label><input id="settingsSiteColor" type="color" value="#f0b90b" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
 <div class="form-group"><label data-i18n="lblBgColor">สีพื้นหลังเว็บไซต์</label><input id="settingsSiteBgColor" type="color" value="#050505" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
 <div class="form-group"><label data-i18n="lblBgImage">รูปภาพพื้นหลังเว็บไซต์ (ทับสีพื้นหลัง)</label>
@@ -622,7 +626,7 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 <div class="flex gap-2"><button class="btn-secondary text-sm" onclick="document.getElementById('siteBgInput').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteSiteBg()"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
 <input type="file" id="siteBgInput" accept="image/*" onchange="handleSiteBgUpload(this)" style="display: none;"/>
 </div>
-<div class="form-group"><label data-i18n="lblWelcome">ข้อความต้อนรับ (หน้าแรก)</label><textarea id="settingsWelcome" placeholder="ข้อความต้อนรับ..."></textarea></div>
+<div class="form-group"><label data-i18n="lblWelcome">ข้อความต้อนรับ (หน้าแรก)</label><textarea id="settingsWelcome" placeholder="ข้อความต้อนรับ..."></textarea><small style="color:#9ca3af;font-size:12px;">เว้นว่าง = ไม่แสดงข้อความบนหน้าแรก</small></div>
 <div class="form-group"><label data-i18n="lblAbout">เกี่ยวกับเรา (About Us)</label><textarea id="settingsAboutUs" placeholder="ข้อความเกี่ยวกับเรา..." rows="8"></textarea></div>
 <button class="btn-primary w-full" onclick="saveSettings()"><i class="fas fa-save"></i> <span data-i18n="btnSaveSettings">บันทึกการตั้งค่า</span></button>
 <div class="form-group"><label>สีปุ่มเริ่มต้นใช้งาน</label><input id="settingsCtaBtnBg" type="color" value="#000000" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
@@ -663,7 +667,7 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 <div class="modal" id="kycDetailModal"><div class="modal-content xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">รายละเอียด KYC</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('kycDetailModal')"><i class="fas fa-times"></i></button></div><div id="kycDetailContent"></div></div></div>
 <div class="modal" id="imagePreviewModal"><div class="modal-content" style="max-width:700px;"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">ดูรูปภาพ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('imagePreviewModal')"><i class="fas fa-times"></i></button></div><div class="text-center"><img id="previewImage" src="" style="max-width:100%;border-radius:12px;"></div></div></div>
 <!-- Modal แก้ไขข้อความหน้าแรก (เพิ่มใหม่) -->
-<div class="modal" id="homeTextModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-pen text-yellow-400 mr-2"></i>แก้ไขข้อความหน้าแรก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('homeTextModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อเว็บไซต์</label><input id="homeEditSiteName" type="text" placeholder="Binance Gold" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ข้อความต้อนรับ (หน้าแรก)</label><textarea id="homeEditWelcome" placeholder="ข้อความต้อนรับ..." style="background:#fbbf24 !important;color:#000 !important;"></textarea></div><button class="btn-primary w-full" onclick="saveHomeText()"><i class="fas fa-save"></i> บันทึก</button></div></div></div>
+<div class="modal" id="homeTextModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-pen text-yellow-400 mr-2"></i>แก้ไขข้อความหน้าแรก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('homeTextModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อเว็บไซต์</label><input id="homeEditSiteName" type="text" placeholder="Binance Gold" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ข้อความต้อนรับ (หน้าแรก)</label><textarea id="homeEditWelcome" placeholder="ข้อความต้อนรับ..." style="background:#fbbf24 !important;color:#000 !important;"></textarea><small style="color:#9ca3af;font-size:12px;">เว้นว่าง = ไม่แสดงข้อความบนหน้าแรก</small></div><button class="btn-primary w-full" onclick="saveHomeText()"><i class="fas fa-save"></i> บันทึก</button></div></div></div>
 
 <script>
 
@@ -723,7 +727,7 @@ th: {
   dashStats: 'สถิติรวม', balanceCard: 'ยอดเงินในระบบ', dashUsers: 'สมาชิกล่าสุด', dashNotif: 'แจ้งเตือนล่าสุด',
   fundPkgCard: 'แพ็คเกจกองทุน (แสดงหน้าเว็บ)', fundListCard: 'รายการลงทุนของสมาชิก', autoTradeCard: 'ตั้งค่าผลการซื้อขายอัตโนมัติตามสมาชิก', pkgCard: 'ตั้งค่าแพ็คเกจซื้อขาย', logoCard: 'โลโก้เว็บไซต์', walletCard: 'ตั้งค่ากระเป๋าเงิน', heroCard: 'ภาพพื้นหลังหน้าแรก (สไลด์ 5 รูป)', siteInfoCard: 'ข้อมูลเว็บไซต์', p2pQrCard: 'QR Code สำหรับฝากเงิน', chatListCard: 'รายชื่อลูกค้า',
   btnSaveSettings: 'บันทึกการตั้งค่า', btnAddPkg: 'เพิ่มแพ็คเกจ', btnSaveFundPkg: 'บันทึกแพ็คเกจกองทุน', btnSavePkg: 'บันทึกแพ็คเกจ', btnUpload: 'อัพโหลด', btnDelete: 'ลบ', btnClear: 'ล้าง',
-  lblSiteName: 'ชื่อเว็บไซต์', lblSiteColor: 'สีชื่อเว็บไซต์', lblWelcome: 'ข้อความต้อนรับ (หน้าแรก)', lblAbout: 'เกี่ยวกับเรา (About Us)', lblWithdrawFee: 'ค่าธรรมเนียมถอน (USDT)', lblMinWithdraw: 'ขั้นต่ำการถอน (USDT)', lblBgColor: 'สีพื้นหลังเว็บไซต์', lblBgImage: 'รูปภาพพื้นหลังเว็บไซต์ (ทับสีพื้นหลัง)', lblSelectUser: 'เลือกสมาชิก', lblAutoResult: 'ผลลัพธ์อัตโนมัติ', lblDelay: 'ดีเลย์ (วินาที)', lblWinRate: 'อัตราชนะสุ่ม (%)',
+  lblSiteName: 'ชื่อเว็บไซต์ (แสดงข้างโลโก้)', lblSiteColor: 'สีชื่อเว็บไซต์', lblWelcome: 'ข้อความต้อนรับ (หน้าแรก)', lblAbout: 'เกี่ยวกับเรา (About Us)', lblWithdrawFee: 'ค่าธรรมเนียมถอน (USDT)', lblMinWithdraw: 'ขั้นต่ำการถอน (USDT)', lblBgColor: 'สีพื้นหลังเว็บไซต์', lblBgImage: 'รูปภาพพื้นหลังเว็บไซต์ (ทับสีพื้นหลัง)', lblSelectUser: 'เลือกสมาชิก', lblAutoResult: 'ผลลัพธ์อัตโนมัติ', lblDelay: 'ดีเลย์ (วินาที)', lblWinRate: 'อัตราชนะสุ่ม (%)',
   pkgPercent: 'กำไร (%)', pkgMinutes: 'เวลา (นาที)', pkgMinAmount: 'ยอดขั้นต่ำ (USDT)', pkgSaved: 'บันทึกแพ็คเกจสำเร็จ',
   winTxt: 'ชนะ', loseTxt: 'แพ้', buyBadge: 'ซื้อ', sellBadge: 'ขาย', statusRunning: 'กำลังดำเนินการ', statusExpired: 'ครบกำหนด', statusDone: 'เสร็จสิ้น', noData: 'ไม่มีรายการ',
   resSet: 'กำหนดผล', resSettledNow: 'ครบเวลาแล้ว ปิดผลทันที', resPreset: 'ตั้งผล', resAutoAt: 'เว็บจะแสดงผลอัตโนมัติเมื่อครบเวลา',
@@ -743,7 +747,7 @@ en: {
   dashStats: 'Overview', balanceCard: 'System Balance', dashUsers: 'Recent Members', dashNotif: 'Recent Notifications',
   fundPkgCard: 'Fund Packages (shown on site)', fundListCard: 'Member Investments', autoTradeCard: 'Auto Trade Result per Member', pkgCard: 'Trade Packages', logoCard: 'Website Logo', walletCard: 'Wallet Settings', heroCard: 'Home Slider (5 images)', siteInfoCard: 'Website Info', p2pQrCard: 'Deposit QR Code', chatListCard: 'Customers',
   btnSaveSettings: 'Save Settings', btnAddPkg: 'Add Package', btnSaveFundPkg: 'Save Fund Packages', btnSavePkg: 'Save Packages', btnUpload: 'Upload', btnDelete: 'Delete', btnClear: 'Clear',
-  lblSiteName: 'Site Name', lblSiteColor: 'Site Name Color', lblWelcome: 'Welcome Text (Home)', lblAbout: 'About Us', lblWithdrawFee: 'Withdraw Fee (USDT)', lblMinWithdraw: 'Min Withdraw (USDT)', lblBgColor: 'Website Background Color', lblBgImage: 'Website Background Image (overrides color)', lblSelectUser: 'Select Member', lblAutoResult: 'Auto Result', lblDelay: 'Delay (seconds)', lblWinRate: 'Random Win Rate (%)',
+  lblSiteName: 'Site Name (shown next to logo)', lblSiteColor: 'Site Name Color', lblWelcome: 'Welcome Text (Home)', lblAbout: 'About Us', lblWithdrawFee: 'Withdraw Fee (USDT)', lblMinWithdraw: 'Min Withdraw (USDT)', lblBgColor: 'Website Background Color', lblBgImage: 'Website Background Image (overrides color)', lblSelectUser: 'Select Member', lblAutoResult: 'Auto Result', lblDelay: 'Delay (seconds)', lblWinRate: 'Random Win Rate (%)',
   pkgPercent: 'Profit (%)', pkgMinutes: 'Time (minutes)', pkgMinAmount: 'Min Amount (USDT)', pkgSaved: 'Packages saved',
   winTxt: 'Win', loseTxt: 'Lose', buyBadge: 'Buy', sellBadge: 'Sell', statusRunning: 'In Progress', statusExpired: 'Expired', statusDone: 'Done', noData: 'No data',
   resSet: 'Result set', resSettledNow: 'Time up — settled immediately', resPreset: 'Preset', resAutoAt: 'Site will show the result automatically when time completes',
@@ -763,7 +767,7 @@ zh: {
   dashStats: '统计概览', balanceCard: '系统余额', dashUsers: '最新会员', dashNotif: '最新通知',
   fundPkgCard: '基金套餐（显示在网站）', fundListCard: '会员投资记录', autoTradeCard: '按会员设置自动交易结果', pkgCard: '交易套餐设置', logoCard: '网站标志', walletCard: '钱包设置', heroCard: '首页轮播图（5张）', siteInfoCard: '网站信息', p2pQrCard: '充值二维码', chatListCard: '客户列表',
   btnSaveSettings: '保存设置', btnAddPkg: '添加套餐', btnSaveFundPkg: '保存基金套餐', btnSavePkg: '保存套餐', btnUpload: '上传', btnDelete: '删除', btnClear: '清除',
-  lblSiteName: '网站名称', lblSiteColor: '网站名称颜色', lblWelcome: '欢迎文字（首页）', lblAbout: '关于我们', lblWithdrawFee: '提现手续费 (USDT)', lblMinWithdraw: '最低提现 (USDT)', lblBgColor: '网站背景颜色', lblBgImage: '网站背景图片（覆盖颜色）', lblSelectUser: '选择会员', lblAutoResult: '自动结果', lblDelay: '延迟（秒）', lblWinRate: '随机胜率 (%)',
+  lblSiteName: '网站名称（显示在Logo旁）', lblSiteColor: '网站名称颜色', lblWelcome: '欢迎文字（首页）', lblAbout: '关于我们', lblWithdrawFee: '提现手续费 (USDT)', lblMinWithdraw: '最低提现 (USDT)', lblBgColor: '网站背景颜色', lblBgImage: '网站背景图片（覆盖颜色）', lblSelectUser: '选择会员', lblAutoResult: '自动结果', lblDelay: '延迟（秒）', lblWinRate: '随机胜率 (%)',
   pkgPercent: '利润 (%)', pkgMinutes: '时间（分钟）', pkgMinAmount: '最低金额 (USDT)', pkgSaved: '套餐已保存',
   winTxt: '赢', loseTxt: '输', buyBadge: '买入', sellBadge: '卖出', statusRunning: '进行中', statusExpired: '已到期', statusDone: '已完成', noData: '暂无数据',
   resSet: '已设定结果', resSettledNow: '时间已到，立即结算', resPreset: '预设结果', resAutoAt: '时间到后网站将自动显示结果',
@@ -879,6 +883,223 @@ function playNotificationSound() {
   } catch(e) {}
 }
 
+// ==================== ALERT SOUNDS (trade + chat) ====================
+// เสียงวนซ้ำ: sound-trade.mp3 = มีรายการซื้อขาย pending ใหม่, sound-chat.mp3 = ลูกค้าส่งแชทเข้ามา
+// ไม่เพิ่ม request ใหม่ — ตรวจจับจากข้อมูลที่ updateBadges() ดึงอยู่แล้วทุก 30s
+let adminSoundEnabled = (function(){ try { return localStorage.getItem('adminSoundEnabled') !== '0'; } catch(e){ return true; } })();
+const tradeAlertAudio = new Audio('/sound-trade.mp3');
+tradeAlertAudio.loop = true; tradeAlertAudio.preload = 'auto';
+const chatAlertAudio = new Audio('/sound-chat.mp3');
+chatAlertAudio.loop = true; chatAlertAudio.preload = 'auto';
+// ฝาก/ถอน ใช้ไฟล์เดียวกับเทรด แต่เป็น instance แยกต่อประเภท (ห้ามเปิด instance เดียวกันซ้อน)
+const depositAlertAudio = new Audio('/sound-trade.mp3');
+depositAlertAudio.loop = true; depositAlertAudio.preload = 'auto';
+const withdrawAlertAudio = new Audio('/sound-trade.mp3');
+withdrawAlertAudio.loop = true; withdrawAlertAudio.preload = 'auto';
+const allAlertAudios = [tradeAlertAudio, depositAlertAudio, withdrawAlertAudio, chatAlertAudio];
+let adminAudioUnlocked = false;
+let adminAudioUnlockArmed = false;
+let tradeAlertWanted = false;
+let chatAlertWanted = false;
+let depositAlertWanted = false;
+let withdrawAlertWanted = false;
+let pendingTradeIdsBaseline = null; // null = ยังไม่ได้ตั้ง baseline (รอบแรกหลังล็อกอิน ไม่เตือน)
+let alertingTrades = {};            // tradeId -> endTime (ms) ที่กำลังเตือนอยู่
+let pendingDepositIdsBaseline = null;  // baseline id ฝาก pending รอบแรก (ไม่เตือน)
+let alertingDeposits = {};          // depositId -> true ที่กำลังเตือนอยู่ (ไม่มี endTime — หยุดเมื่อถูกจัดการ)
+let pendingWithdrawIdsBaseline = null; // baseline id ถอน pending รอบแรก (ไม่เตือน)
+let alertingWithdraws = {};         // withdrawId -> true ที่กำลังเตือนอยู่
+let chatTsBaseline = null;          // timestamp ข้อความลูกค้าล่าสุดที่รู้จัก
+let alertingChatUsers = {};         // userId -> true (ลูกค้าที่ส่งข้อความเข้ามาและยังไม่ได้เปิดดู)
+let alertTickTimer = null;          // timer 1s สำหรับหยุดเสียงเทรดเมื่อหมดเวลา
+
+function toggleAdminSound() {
+  adminSoundEnabled = !adminSoundEnabled;
+  try { localStorage.setItem('adminSoundEnabled', adminSoundEnabled ? '1' : '0'); } catch(e) {}
+  if (!adminSoundEnabled) {
+    allAlertAudios.forEach(a => { a.pause(); try { a.currentTime = 0; } catch(e) {} });
+  }
+  syncAlertSounds();
+  showToast(adminSoundEnabled ? 'เปิดเสียงแจ้งเตือนแล้ว' : 'ปิดเสียงแจ้งเตือนแล้ว', adminSoundEnabled ? 'success' : 'normal');
+}
+
+function updateSoundBtn() {
+  const btn = document.getElementById('adminSoundBtn');
+  const icon = document.getElementById('adminSoundIcon');
+  if (!btn || !icon) return;
+  icon.className = adminSoundEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+  btn.title = adminSoundEnabled ? 'ปิดเสียงแจ้งเตือน' : 'เปิดเสียงแจ้งเตือน';
+  const playing = adminSoundEnabled && allAlertAudios.some(a => !a.paused);
+  btn.classList.toggle('sound-alert-active', playing);
+}
+
+// Browser autoplay policy: unlock เสียงหลัง user gesture (ล็อกอินสำเร็จ/คลิกแรก)
+function unlockAdminAudio() {
+  allAlertAudios.forEach(a => {
+    if (!a.paused) { adminAudioUnlocked = true; return; }
+    try {
+      a.load();
+      a.muted = true;
+      const p = a.play();
+      if (p && p.then) {
+        p.then(() => { a.pause(); try { a.currentTime = 0; } catch(e) {} a.muted = false; adminAudioUnlocked = true; })
+         .catch(() => { a.muted = false; adminAudioUnlocked = false; });
+      } else {
+        a.pause(); try { a.currentTime = 0; } catch(e) {} a.muted = false; adminAudioUnlocked = true;
+      }
+    } catch(e) { a.muted = false; }
+  });
+}
+
+// ถ้า play() โดนบล็อก ให้ลองใหม่หลังคลิกถัดไป (re-arm จนกว่าจะ unlock สำเร็จ)
+function armAdminAudioUnlock() {
+  if (adminAudioUnlockArmed) return;
+  adminAudioUnlockArmed = true;
+  document.addEventListener('click', function _unlockHandler() {
+    adminAudioUnlockArmed = false;
+    unlockAdminAudio();
+    syncAlertSounds();
+    if (!adminAudioUnlocked) armAdminAudioUnlock();
+  }, { once: true });
+}
+
+function syncAlertSounds() {
+  tradeAlertWanted = Object.keys(alertingTrades).length > 0;
+  depositAlertWanted = Object.keys(alertingDeposits).length > 0;
+  withdrawAlertWanted = Object.keys(alertingWithdraws).length > 0;
+  chatAlertWanted = Object.keys(alertingChatUsers).length > 0;
+  // หลายประเภทเตือนพร้อมกัน: เล่นทีละเสียงตาม priority (เทรด > ฝาก > ถอน > แชท) ไม่เปิดซ้อนกัน
+  const priority = [
+    [tradeAlertAudio, tradeAlertWanted],
+    [depositAlertAudio, depositAlertWanted],
+    [withdrawAlertAudio, withdrawAlertWanted],
+    [chatAlertAudio, chatAlertWanted]
+  ];
+  let activeClaimed = false;
+  priority.forEach(pair => {
+    const a = pair[0];
+    const want = pair[1] && adminSoundEnabled && !activeClaimed;
+    if (pair[1] && adminSoundEnabled) activeClaimed = true;
+    if (want) {
+      if (a.paused) {
+        const p = a.play();
+        if (p && p.then) p.then(() => { adminAudioUnlocked = true; updateSoundBtn(); }).catch(() => { armAdminAudioUnlock(); updateSoundBtn(); });
+      }
+    } else {
+      a.pause(); try { a.currentTime = 0; } catch(e) {}
+    }
+  });
+  manageAlertTick();
+  updateSoundBtn();
+}
+
+// ตรวจทุก 1s ว่ารายการเทรดที่กำลังเตือนหมดเวลาแล้วหรือยัง — หมดแล้วให้หยุดเสียงทันที (ไม่รอรอบ poll 30s)
+function manageAlertTick() {
+  if (tradeAlertWanted && !alertTickTimer) {
+    alertTickTimer = setInterval(() => {
+      const now = Date.now();
+      Object.keys(alertingTrades).forEach(id => { const end = alertingTrades[id]; if (end && end <= now) delete alertingTrades[id]; });
+      syncAlertSounds();
+    }, 1000);
+  } else if (!tradeAlertWanted && alertTickTimer) {
+    clearInterval(alertTickTimer);
+    alertTickTimer = null;
+  }
+}
+
+// A) แจ้งเตือนรายการซื้อขายใหม่: เทียบ id รายการ pending รอบก่อน vs รอบใหม่
+function handleTradeAlerts(allTrades) {
+  const now = Date.now();
+  const live = allTrades.filter(t => t.status === 'pending');
+  // ตัดรายการที่ admin จัดการแล้ว (ตั้งผล/settle) หรือหมดเวลาออกจากชุดที่กำลังเตือน
+  Object.keys(alertingTrades).forEach(id => {
+    const t = live.find(x => x.id === id);
+    const end = t && t.endTime ? new Date(t.endTime).getTime() : 0;
+    if (!t || t.result === 'win' || t.result === 'lose' || (end && end <= now)) delete alertingTrades[id];
+  });
+  if (pendingTradeIdsBaseline === null) {
+    pendingTradeIdsBaseline = {};
+    live.forEach(t => { pendingTradeIdsBaseline[t.id] = true; });
+  } else {
+    live.forEach(t => {
+      if (pendingTradeIdsBaseline[t.id]) return;
+      pendingTradeIdsBaseline[t.id] = true;
+      const end = t.endTime ? new Date(t.endTime).getTime() : 0;
+      const handled = t.result === 'win' || t.result === 'lose';
+      if (!handled && (!end || end > now)) alertingTrades[t.id] = end || (now + 60000);
+    });
+  }
+  syncAlertSounds();
+}
+
+// A2) แจ้งเตือนคำขอฝากเงินใหม่: เทียบ id รายการ pending รอบก่อน vs รอบใหม่ (ไม่มี endTime — เสียงหยุดเมื่อถูกอนุมัติ/ปฏิเสธ)
+function handleDepositAlerts(allDeposits) {
+  const live = allDeposits.filter(d => d.status === 'pending');
+  // ตัดรายการที่ admin จัดการแล้ว (หายจาก pending) ออกจากชุดที่กำลังเตือน
+  Object.keys(alertingDeposits).forEach(id => {
+    if (!live.find(x => x.id === id)) delete alertingDeposits[id];
+  });
+  if (pendingDepositIdsBaseline === null) {
+    pendingDepositIdsBaseline = {};
+    live.forEach(d => { pendingDepositIdsBaseline[d.id] = true; });
+  } else {
+    live.forEach(d => {
+      if (pendingDepositIdsBaseline[d.id]) return;
+      pendingDepositIdsBaseline[d.id] = true;
+      alertingDeposits[d.id] = true;
+    });
+  }
+  syncAlertSounds();
+}
+
+// A3) แจ้งเตือนคำขอถอนเงินใหม่: รูปแบบเดียวกับฝากเงิน
+function handleWithdrawAlerts(allWithdraws) {
+  const live = allWithdraws.filter(w => w.status === 'pending');
+  Object.keys(alertingWithdraws).forEach(id => {
+    if (!live.find(x => x.id === id)) delete alertingWithdraws[id];
+  });
+  if (pendingWithdrawIdsBaseline === null) {
+    pendingWithdrawIdsBaseline = {};
+    live.forEach(w => { pendingWithdrawIdsBaseline[w.id] = true; });
+  } else {
+    live.forEach(w => {
+      if (pendingWithdrawIdsBaseline[w.id]) return;
+      pendingWithdrawIdsBaseline[w.id] = true;
+      alertingWithdraws[w.id] = true;
+    });
+  }
+  syncAlertSounds();
+}
+
+// B) แจ้งเตือนแชทลูกค้าใหม่: เทียบ timestamp ข้อความจากลูกค้ารอบก่อน-ใหม่
+function handleChatAlerts(allChats) {
+  const userMsgs = allChats.filter(c => c.sender === 'user');
+  let maxTs = chatTsBaseline;
+  userMsgs.forEach(c => {
+    const ts = new Date(c.created_at || c.createdAt).getTime() || 0;
+    if (!maxTs || ts > maxTs) maxTs = ts;
+  });
+  if (chatTsBaseline === null) { chatTsBaseline = maxTs; return; } // รอบแรก — ตั้ง baseline ไม่เตือน
+  const chatOpen = chatTabIsActive();
+  userMsgs.forEach(c => {
+    const ts = new Date(c.created_at || c.createdAt).getTime() || 0;
+    if (!ts || ts <= chatTsBaseline) return;
+    const uid = c.user_id || c.userId;
+    // ถ้า admin กำลังเปิดหน้าต่างแชทคุยกับคนนั้นอยู่ ไม่ต้องเตือน
+    if (uid && !(chatOpen && uid === currentChatUserId)) alertingChatUsers[uid] = true;
+  });
+  chatTsBaseline = maxTs;
+  syncAlertSounds();
+}
+
+// หยุดเสียงโทรเข้าเมื่อ admin เปิดแชทลูกค้าคนนั้นหรือตอบกลับ
+function clearChatAlertFor(userId) {
+  if (userId && alertingChatUsers[userId]) { delete alertingChatUsers[userId]; syncAlertSounds(); }
+}
+
+armAdminAudioUnlock();
+updateSoundBtn();
+
 async function doLogin() {
   const usernameEl = document.getElementById('loginUsername');
   const passwordEl = document.getElementById('loginPassword');
@@ -911,6 +1132,7 @@ async function doLogin() {
     document.getElementById('adminPanel').classList.add('show');
     document.getElementById('adminDisplayName').textContent = data.admin.name || data.admin.username;
     showToast(tAdmin('loginSuccess'), 'success');
+    unlockAdminAudio();
     await loadDashboard();
     startAutoRefresh();
     updateAdminLanguage();
@@ -1116,19 +1338,22 @@ async function processDueTradeSettlements() {
     if (tr.status !== 'pending' || (tr.result !== 'win' && tr.result !== 'lose')) continue;
     const end = tr.endTime ? new Date(tr.endTime).getTime() : 0;
     if (!end || end > now) continue;
-    const amount = Number(tr.amount)||0, pct = Number(tr.percent || (tr.package&&tr.package.percent)||0);
-    const profit = tr.result === 'win' ? amount*pct/100 : -amount;
-    try { await BinanceGoldAPI.fetch('/api/admin/trades/'+encodeURIComponent(tr.id)+'/settle',{method:'POST',body:{result:tr.result,profit}}); } catch(e) { console.warn('settlement deferred',e); }
+    // server สุ่มยอดกำไร/ขาดทุน (base..base*1.8) เองตอน settle — client ส่งแค่ผล win/lose
+    try { await BinanceGoldAPI.fetch('/api/admin/trades/'+encodeURIComponent(tr.id)+'/settle',{method:'POST',body:{result:tr.result}}); } catch(e) { console.warn('settlement deferred',e); }
   }
 }
 
 async function updateBadges() {
-  const deposits = (await DB.getDeposits()).filter(d => d.status === 'pending').length;
-  const withdraws = (await DB.getWithdraws()).filter(w => w.status === 'pending').length;
-  const trades = (await DB.getTrades()).filter(t => t.status === 'pending').length;
+  const allDeposits = await DB.getDeposits();
+  const allWithdraws = await DB.getWithdraws();
+  const deposits = allDeposits.filter(d => d.status === 'pending').length;
+  const withdraws = allWithdraws.filter(w => w.status === 'pending').length;
+  const allTrades = await DB.getTrades();
+  const trades = allTrades.filter(t => t.status === 'pending').length;
   const funds = (await DB.getFunds()).filter(f => f.status === 'active').length;
   const kycs = (await DB.getKycs()).filter(k => k.status === 'pending').length;
-  const chats = (await DB.getChats()).filter(c => c.sender === 'user').length;
+  const allChats = await DB.getChats();
+  const chats = allChats.filter(c => c.sender === 'user').length;
 
   document.getElementById('badgeDeposits').textContent = deposits;
   document.getElementById('badgeWithdraws').textContent = withdraws;
@@ -1144,6 +1369,10 @@ async function updateBadges() {
   if (kycs > lastCounts.kyc && !pendingNotifications.kyc) { pendingNotifications.kyc = true; playNotificationSound(); }
   if (chats > lastCounts.chat && !pendingNotifications.chat) { pendingNotifications.chat = true; playNotificationSound(); }
   lastCounts = { deposits, withdraws, trades, kyc: kycs, chats };
+  handleTradeAlerts(allTrades);
+  handleDepositAlerts(allDeposits);
+  handleWithdrawAlerts(allWithdraws);
+  handleChatAlerts(allChats);
 }
 
 // ==================== DASHBOARD ====================
@@ -1585,6 +1814,8 @@ function appendAdminChatMessages(chats) {
     adminChatKnownIds[c.id] = true;
     const ts = c.created_at || c.createdAt;
     if (ts && (!adminChatLastTs || ts > adminChatLastTs)) adminChatLastTs = ts;
+    // ข้อความที่ admin เห็นแล้วในหน้าต่างแชท — ขยับ baseline เสียงแจ้งเตือนตาม ไม่ให้เตือนซ้ำ
+    if (c.sender === 'user') { const m = new Date(ts).getTime() || 0; if (m && (!chatTsBaseline || m > chatTsBaseline)) chatTsBaseline = m; }
     html += adminChatBubbleHtml(c);
   });
   if (!html) return;
@@ -1614,6 +1845,7 @@ function stopChatPolling() {
 
 async function selectChatUser(userId) {
   currentChatUserId = userId;
+  clearChatAlertFor(userId); // เปิดแชทลูกค้าคนนี้แล้ว — หยุดเสียงโทรเข้า
   const user = (await DB.getUsers()).find(u => u.id === userId);
   if (user) {
     document.getElementById('chatUserName').textContent = user.name;
@@ -1636,6 +1868,8 @@ async function loadAdminChatMessages(force) {
     adminChatKnownIds[c.id] = true;
     const ts = c.created_at || c.createdAt;
     if (ts && (!adminChatLastTs || ts > adminChatLastTs)) adminChatLastTs = ts;
+    // ข้อความที่ admin เปิดอ่านแล้ว — ขยับ baseline เสียงแจ้งเตือนตาม ไม่ให้เตือนซ้ำ
+    if (c.sender === 'user') { const m = new Date(ts).getTime() || 0; if (m && (!chatTsBaseline || m > chatTsBaseline)) chatTsBaseline = m; }
     return adminChatBubbleHtml(c);
   }).join('');
   container.scrollTop = container.scrollHeight;
@@ -1643,6 +1877,7 @@ async function loadAdminChatMessages(force) {
 
 async function sendAdminMessage() {
   if (!currentChatUserId) return;
+  clearChatAlertFor(currentChatUserId); // ตอบกลับแล้ว — หยุดเสียงโทรเข้า
   const input = document.getElementById('adminChatInput');
   const text = input.value.trim();
   if (!text) return;
@@ -1676,6 +1911,7 @@ async function sendAdminMessage() {
 
 async function sendAdminImage() {
   if (!currentChatUserId) return;
+  clearChatAlertFor(currentChatUserId); // ตอบกลับแล้ว — หยุดเสียงโทรเข้า
   const input = document.getElementById('adminChatImage');
   const file = input.files[0];
   if (!file) return;
@@ -2200,6 +2436,7 @@ async function loadFundInvestments() {
     const user = users.find(u => u.id === f.user_id || u.id === f.userId);
     const amount = parseFloat(f.amount) || 0;
     const profit = amount * (parseFloat(f.percent) || 0) / 100;
+    const profitMax = profit * 1.8; // กำไรจริงสุ่มช่วง base..base*1.8 ตอน settle
     const end = new Date(f.endTime).getTime();
     const expired = now >= end;
     const remain = expired ? 'ครบกำหนด' : fmtFundRemain(end - now);
@@ -2217,7 +2454,7 @@ async function loadFundInvestments() {
       statusHtml = f.result === 'win' ? '<span class="badge badge-approved">ชนะ</span>' : '<span class="badge badge-rejected">ขาดทุน</span>';
       actions = '<span class="text-xs text-gray-500">เสร็จสิ้น</span>';
     }
-    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">+${f.percent}% ($${profit.toLocaleString()})</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
+    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">${f.status === 'completed' ? (f.result === 'win' ? '+$' + (parseFloat(f.profit) || 0).toFixed(2) : '-$' + Math.abs(parseFloat(f.profit) || 0).toFixed(2)) : '+' + f.percent + '% ($' + profit.toLocaleString() + '–$' + profitMax.toLocaleString() + ')'}</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
   }).join('');
 }
 
