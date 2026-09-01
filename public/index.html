@@ -903,7 +903,10 @@ QR Code
 <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">B</div>
 <span class="font-bold text-white" id="chatTitle">บริการลูกค้า</span>
 </div>
+<div class="flex items-center gap-3">
+<button class="text-gray-400 hover:text-yellow-500 transition text-lg" title="รีเฟรช" onclick="renderChat()">⟳</button>
 <button class="text-gray-400 hover:text-white" onclick="closeModal('chatModal')">✕</button>
+</div>
 </div>
 <div class="flex-1 p-4 overflow-y-auto space-y-4 bg-[#050505]" id="chatMessages">
 <div class="chat-message received" id="chatWelcome">สวัสดีค่ะ ยินดีให้บริการ มีอะไรให้ทางเราช่วยเหลือไหมคะ?</div>
@@ -1263,8 +1266,8 @@ function showTab(tabId, btn) {
   if (tabId === 'fund') loadFundData();
 }
 
-function openModal(id) { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); document.body.style.overflow = ''; }
+function openModal(id) { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; if (id === 'chatModal') { renderChat(); startChatPolling(); } }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); document.body.style.overflow = ''; if (id === 'chatModal') stopChatPolling(); }
 
 // ==================== 15 LANGUAGES ====================
 function getLangMeta(code) {
@@ -2367,26 +2370,121 @@ function copyToClipboard(elementId) {
 }
 
 // ==================== CHAT ====================
+// Near-real-time chat: while the chat modal is open we poll ONLY this user's
+// thread every 3.5s (skipped while the tab is hidden) using the ?since=
+// cursor, and append just the new messages — no full re-render, so the scroll
+// position and already-loaded images stay put. Polling stops the moment the
+// modal closes, keeping us far below the 1500 req/15min rate limit.
+let chatPollTimer = null;
+let chatLastTs = null;          // ISO timestamp cursor for ?since=
+let chatKnownIds = {};          // ids already rendered (dedup optimistic vs polled)
+
+function chatModalIsOpen() {
+  const m = document.getElementById('chatModal');
+  return !!(m && m.classList.contains('active'));
+}
+
+function chatBubbleHtml(c) {
+  const cls = c.sender === 'admin' ? 'received' : 'sent';
+  if (c.type === 'image') return `<div class="chat-message ${cls}"><img src="${c.message}" style="max-width:200px;border-radius:12px;"></div>`;
+  return `<div class="chat-message ${cls}">${c.message}</div>`;
+}
+
+function appendChatMessages(chats) {
+  const container = document.getElementById('chatMessages');
+  if (!container || !chats.length) return;
+  const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+  let html = '';
+  chats.forEach(c => {
+    if (!c || chatKnownIds[c.id]) return;
+    chatKnownIds[c.id] = true;
+    const ts = c.created_at || c.createdAt;
+    if (ts && (!chatLastTs || ts > chatLastTs)) chatLastTs = ts;
+    html += chatBubbleHtml(c);
+  });
+  if (!html) return;
+  container.insertAdjacentHTML('beforeend', html);
+  if (nearBottom) container.scrollTop = container.scrollHeight;
+}
+
+async function pollChatNew() {
+  if (!currentUser || !chatModalIsOpen() || document.hidden) return;
+  try {
+    const list = await DB.getChatsByUser(currentUser.id, chatLastTs || undefined);
+    const fresh = (list || []).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+    appendChatMessages(fresh);
+  } catch (e) { console.error('chat poll', e); }
+}
+
+function startChatPolling() {
+  stopChatPolling();
+  chatPollTimer = setInterval(function () { if (!document.hidden) pollChatNew(); }, 3500);
+}
+
+function stopChatPolling() {
+  if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
+}
+
+function buildChatId() {
+  return 'C' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
 async function sendMessage() {
   if (!currentUser) return;
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if (!text) return;
 
-  const chat = { 
-    id: 'C' + Math.floor(100000 + Math.random() * 900000).toString(), 
-    user_id: currentUser.id, 
+  const nowIso = new Date().toISOString();
+  const chat = {
+    id: buildChatId(),
+    user_id: currentUser.id,
     userId: currentUser.id,
-    sender: 'user', 
-    message: text, 
-    type: 'text', 
-    createdAt: new Date().toISOString(),
-    created_at: new Date().toISOString()
+    sender: 'user',
+    message: text,
+    type: 'text',
+    createdAt: nowIso,
+    created_at: nowIso
   };
 
+  // Optimistic: show our own message instantly; the id is registered so the
+  // next poll skips the server's copy of the same record.
+  input.value = '';
+  chatKnownIds[chat.id] = true;
+  const nts = chat.created_at;
+  if (!chatLastTs || nts > chatLastTs) chatLastTs = nts;
+  if (chatModalIsOpen()) {
+    const container = document.getElementById('chatMessages');
+    container.insertAdjacentHTML('beforeend', chatBubbleHtml(chat));
+    container.scrollTop = container.scrollHeight;
+  }
+  try {
+    await DB.createChat(chat);
+  } catch (e) { console.error(e); showToast(t('error') || 'ส่งข้อความไม่สำเร็จ'); }
+  pollChatNew();
+}
+
+async function sendChatImage(imageUrl) {
+  const nowIso = new Date().toISOString();
+  const chat = {
+    id: buildChatId(),
+    user_id: currentUser.id,
+    userId: currentUser.id,
+    sender: 'user',
+    message: imageUrl,
+    type: 'image',
+    createdAt: nowIso,
+    created_at: nowIso
+  };
+  chatKnownIds[chat.id] = true;
+  if (!chatLastTs || chat.created_at > chatLastTs) chatLastTs = chat.created_at;
+  if (chatModalIsOpen()) {
+    const container = document.getElementById('chatMessages');
+    container.insertAdjacentHTML('beforeend', chatBubbleHtml(chat));
+    container.scrollTop = container.scrollHeight;
+  }
   await DB.createChat(chat);
-  input.value = ''; 
-  renderChat();
+  pollChatNew();
 }
 
 async function handleChatImageUpload(input) {
@@ -2404,47 +2502,31 @@ async function handleChatImageUpload(input) {
   if (!imageUrl) {
     try {
       const url = await resizeImageFile(file, 1000, 0.8);
-      const chat = { 
-        id: 'C' + Math.floor(100000 + Math.random() * 900000).toString(), 
-        user_id: currentUser.id, 
-        userId: currentUser.id,
-        sender: 'user', 
-        message: url, 
-        type: 'image', 
-        createdAt: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      };
-      await DB.createChat(chat);
-      renderChat();
+      await sendChatImage(url);
     } catch (e) { console.error(e); showToast(t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); }
     input.value = '';
     return;
   }
 
-  const chat = { 
-    id: 'C' + Math.floor(100000 + Math.random() * 900000).toString(), 
-    user_id: currentUser.id, 
-    userId: currentUser.id,
-    sender: 'user', 
-    message: imageUrl, 
-    type: 'image', 
-    createdAt: new Date().toISOString(),
-    created_at: new Date().toISOString()
-  };
-  await DB.createChat(chat);
-  renderChat();
+  try { await sendChatImage(imageUrl); } catch (e) { console.error(e); showToast(t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); }
+  input.value = '';
 }
 
 async function renderChat() {
   if (!currentUser) return;
   const container = document.getElementById('chatMessages');
   const chats = (await DB.getChatsByUser(currentUser.id)).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+  // Full render resets the incremental cursor/dedup state.
+  chatKnownIds = {};
+  chatLastTs = null;
   let html = `<div class="chat-message received">${t('chatWelcome')}</div>`;
   chats.forEach(c => {
-    if (c.type === 'image') html += `<div class="chat-message ${c.sender === 'admin' ? 'received' : 'sent'}"><img src="${c.message}" style="max-width:200px;border-radius:12px;"></div>`;
-    else html += `<div class="chat-message ${c.sender === 'admin' ? 'received' : 'sent'}">${c.message}</div>`;
+    chatKnownIds[c.id] = true;
+    const ts = c.created_at || c.createdAt;
+    if (ts && (!chatLastTs || ts > chatLastTs)) chatLastTs = ts;
+    html += chatBubbleHtml(c);
   });
-  container.innerHTML = html; 
+  container.innerHTML = html;
   container.scrollTop = container.scrollHeight;
 }
 

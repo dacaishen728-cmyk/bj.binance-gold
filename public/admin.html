@@ -134,6 +134,7 @@ body { background: #050505; color: #e5e5e5; margin: 0; padding: 0; overflow-x: h
 .badge-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
 .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 .badge-failed { background: rgba(100, 100, 100, 0.2); color: #888; }
+.note-badge { display: inline-block; margin-top: 2px; background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); font-size: 11px; padding: 1px 8px; border-radius: 10px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; border-bottom: 1px solid #1a1a1a; }
 td { padding: 12px 16px; border-bottom: 1px solid #1a1a1a; font-size: 14px; color: #ccc; }
@@ -300,6 +301,7 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 </div>
 <div class="flex items-center gap-4">
 <button type="button" id="adminThemeToggle" class="theme-switch-btn" onclick="toggleAdminTheme()" aria-label="สลับโหมดสี" title="สลับโหมดสี"><i id="adminThemeIcon" class="fas fa-moon" aria-hidden="true"></i><span id="adminThemeLabel" class="sr-only">โหมดมืด</span></button>
+<button type="button" id="adminRefreshBtn" class="theme-switch-btn" onclick="refreshAdminData()" aria-label="รีเฟรชข้อมูล" title="รีเฟรชข้อมูลแท็บนี้"><i id="adminRefreshIcon" class="fas fa-sync-alt" aria-hidden="true"></i><span class="sr-only">รีเฟรช</span></button>
 <div class="lang-switcher" style="position:relative;">
 <button id="adminLangBtn" onclick="toggleAdminLangMenu(event)" style="display:flex;align-items:center;gap:6px;"><span id="adminLangFlag" style="font-size:18px;">🇹🇭</span><span id="adminLangCode">TH</span><i class="fas fa-chevron-down" style="font-size:9px;"></i></button>
 <div id="adminLangMenu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:#161616;border:1px solid #333;border-radius:12px;padding:6px;z-index:200;min-width:160px;box-shadow:0 10px 30px rgba(0,0,0,.6);flex-direction:column;gap:4px;">
@@ -471,11 +473,14 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 <!-- CHAT -->
 <div class="tab-content p-6" id="tab-chat">
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="height: calc(100vh - 140px);">
-<div class="card lg:col-span-1 overflow-hidden flex flex-col"><h3 class="font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-comments text-yellow-400"></i><span data-i18n="chatListCard"> รายชื่อลูกค้า</span></h3><div class="flex-1 overflow-y-auto space-y-2" id="chatUserList"></div></div>
+<div class="card lg:col-span-1 overflow-hidden flex flex-col"><h3 class="font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-comments text-yellow-400"></i><span data-i18n="chatListCard"> รายชื่อลูกค้า</span><button class="ml-auto text-gray-400 hover:text-yellow-400 transition text-base" title="รีเฟรช" onclick="loadChatUsers()">⟳</button></h3><div class="flex-1 overflow-y-auto space-y-2" id="chatUserList"></div></div>
 <div class="card lg:col-span-2 overflow-hidden flex flex-col">
 <div class="flex justify-between items-center mb-4 pb-4 border-b border-[#1a1a1a]">
 <div class="flex items-center gap-3"><div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-lg" id="chatUserAvatar">U</div><div><div class="font-bold text-white" id="chatUserName">เลือกลูกค้า</div><div class="text-xs text-gray-500" id="chatUserPhone">-</div></div></div>
+<div class="flex items-center gap-2">
+<button class="text-gray-400 hover:text-yellow-400 transition text-lg" title="รีเฟรช" onclick="loadAdminChatMessages(true)">⟳</button>
 <button class="btn-danger text-sm" onclick="deleteUserChatHistory()" id="deleteChatBtn" style="display:none;"><i class="fas fa-trash"></i> ลบแชท</button>
+</div>
 </div>
 <div class="flex-1 overflow-y-auto space-y-3 mb-4 p-2" id="adminChatMessages"></div>
 <div class="flex gap-2 pt-4 border-t border-[#1a1a1a]">
@@ -644,7 +649,7 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 
 <!-- MODALS -->
 <div class="modal" id="userDetailModal"><div class="modal-content wide"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">ข้อมูลสมาชิก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('userDetailModal')"><i class="fas fa-times"></i></button></div><div id="userDetailContent"></div></div></div>
-<div class="modal" id="editUserModal"><div class="modal-content wide"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขสมาชิก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editUserModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อ-นามสกุล</label><input id="editUserName" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>เบอร์โทรศัพท์</label><input id="editUserPhone" type="tel" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>รหัสผ่าน (เว้นว่างถ้าไม่เปลี่ยน)</label><input id="editUserPassword" type="text" placeholder="••••••" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ยอดเงิน (USDT)</label><input id="editUserBalance" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>VIP Level</label><input id="editUserVip" type="number" min="1" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>KYC สถานะ</label><select id="editUserKyc" style="background:#fbbf24 !important;color:#000 !important;"><option value="none">ยังไม่ยืนยัน</option><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="verified">ยืนยันแล้ว</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option></select></div><div class="form-group"><label>สถานะบัญชี</label><select id="editUserStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="active">ใช้งาน</option><option value="suspended">ระงับ</option><option value="banned">แบน</option></select></div><div class="form-group"><label>หมายเหตุ</label><textarea id="editUserNote" style="background:#fbbf24 !important;color:#000 !important;"></textarea></div><button class="btn-primary w-full" onclick="saveUserEdit()">บันทึกการแก้ไข</button></div></div></div>
+<div class="modal" id="editUserModal"><div class="modal-content wide"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขสมาชิก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editUserModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อ-นามสกุล</label><input id="editUserName" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>เบอร์โทรศัพท์</label><input id="editUserPhone" type="tel" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>รหัสผ่าน (เว้นว่างถ้าไม่เปลี่ยน)</label><input id="editUserPassword" type="text" placeholder="••••••" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ยอดเงิน (USDT)</label><input id="editUserBalance" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>VIP Level</label><input id="editUserVip" type="number" min="1" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>KYC สถานะ</label><select id="editUserKyc" style="background:#fbbf24 !important;color:#000 !important;"><option value="none">ยังไม่ยืนยัน</option><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="verified">ยืนยันแล้ว</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option></select></div><div class="form-group"><label>สถานะบัญชี</label><select id="editUserStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="active">ใช้งาน</option><option value="suspended">ระงับ</option><option value="banned">แบน</option></select></div><div class="form-group"><label>หมายเหตุ / โน้ตส่วนตัวของแอดมิน (สมาชิกไม่เห็น)</label><textarea id="editUserNote" placeholder="เช่น เพื่อนสนิท, ลูกค้า VIP ..." style="background:#fbbf24 !important;color:#000 !important;"></textarea></div><button class="btn-primary w-full" onclick="saveUserEdit()">บันทึกการแก้ไข</button></div></div></div>
 
 <div class="modal" id="userTradeModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-bullseye text-green-400 mr-2"></i><span data-i18n="utsTitle">กำหนดผลการซื้อขาย</span></h3><button class="text-gray-500 hover:text-white" onclick="closeModal('userTradeModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4">
 <div class="text-sm text-gray-400" id="utsUserName">-</div>
@@ -984,6 +989,35 @@ function applyAdminRoleRestrictions() {
   });
 }
 
+function escNote(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+// ปุ่ม ⟳ บน topbar: โหลดข้อมูลของแท็บที่เปิดอยู่ใหม่ + อัปเดต badge (ไม่ reload ทั้งหน้า)
+async function refreshAdminData() {
+  const icon = document.getElementById('adminRefreshIcon');
+  if (icon) icon.classList.add('fa-spin');
+  try {
+    const activeTab = document.querySelector('.tab-content.active');
+    const tabId = activeTab ? activeTab.id.replace('tab-', '') : 'dashboard';
+    const loaders = {
+      dashboard: loadDashboard,
+      users: loadUsers,
+      deposits: loadDeposits,
+      withdraws: loadWithdraws,
+      trades: loadTrades,
+      fund: async () => { await loadFundPackagesAdmin(); await loadFundInvestments(); },
+      kyc: loadKycs,
+      chat: loadChatUsers,
+      admins: loadAdmins,
+      p2p: loadP2PSettings,
+      settings: async () => { await loadSettings(); await loadPackages(); await loadAutoTradeUserList(); await loadHeroImages(); }
+    };
+    const loader = loaders[tabId] || loadDashboard;
+    await Promise.all([Promise.resolve(loader()), Promise.resolve(updateBadges())]);
+    showToast('รีเฟรชแล้ว', 'success', 1500);
+  } catch (e) { console.error(e); }
+  if (icon) icon.classList.remove('fa-spin');
+}
+
 function showAdminTab(tabId, element) {
   // guard สิทธิ์ sub-admin
   if (currentAdmin && currentAdmin.role !== 'superadmin' && ['admins', 'p2p', 'settings'].includes(tabId)) {
@@ -1003,7 +1037,7 @@ function showAdminTab(tabId, element) {
   if (tabId === 'trades') loadTrades(); 
   if (tabId === 'fund') { loadFundPackagesAdmin(); loadFundInvestments(); }
   if (tabId === 'kyc') loadKycs();
-  if (tabId === 'chat') loadChatUsers(); 
+  if (tabId === 'chat') { loadChatUsers(); startChatPolling(); } else { stopChatPolling(); }
   if (tabId === 'admins') loadAdmins(); 
   if (tabId === 'p2p') loadP2PSettings(); 
   if (tabId === 'settings') { loadSettings(); loadPackages(); loadAutoTradeUserList(); loadHeroImages(); }
@@ -1051,7 +1085,8 @@ function startAutoRefresh() {
       if (tabId === 'trades') loadTrades(); 
       if (tabId === 'fund') loadFundInvestments();
       if (tabId === 'kyc') loadKycs();
-      if (tabId === 'chat') { loadChatUsers(); if (currentChatUserId) loadAdminChatMessages(); }
+      // แชทมีตัว poll เฉพาะทาง (3.5s สำหรับหน้าต่างสนทนา / 20s สำหรับรายชื่อ)
+      // ไม่ต้อง reload ซ้ำในรอบ 30s — กัน re-render ทั้งกระดานและ scroll กระตุก
     }
   }, 30000);
 }
@@ -1160,7 +1195,7 @@ async function loadUsers() {
     const kycClass = kyc === 'verified' ? 'approved' : kyc === 'pending' ? 'pending' : 'rejected';
     const status = u.status || 'active';
     const statusClass = status === 'active' ? 'approved' : status === 'suspended' ? 'pending' : 'rejected';
-    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div><div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
+    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div>${u.note ? `<div class="note-badge" title="โน้ตของแอดมิน (สมาชิกไม่เห็น)">📝 ${escNote(u.note)}</div>` : ''}<div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
   }).join('') || '<tr><td colspan="7" class="text-center text-gray-500 py-8">ไม่มีสมาชิก</td></tr>';
 }
 
@@ -1172,7 +1207,7 @@ async function searchUsers() {
     const kycClass = kyc === 'verified' ? 'approved' : kyc === 'pending' ? 'pending' : 'rejected';
     const status = u.status || 'active';
     const statusClass = status === 'active' ? 'approved' : status === 'suspended' ? 'pending' : 'rejected';
-    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div><div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
+    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div>${u.note ? `<div class="note-badge" title="โน้ตของแอดมิน (สมาชิกไม่เห็น)">📝 ${escNote(u.note)}</div>` : ''}<div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
   }).join('') || '<tr><td colspan="7" class="text-center text-gray-500 py-8">ไม่พบสมาชิก</td></tr>';
 }
 
@@ -1516,60 +1551,156 @@ async function loadChatUsers() {
   if (chatUsers.length > 0 && !currentChatUserId) selectChatUser(chatUsers[0].user.id);
 }
 
-async function selectChatUser(userId) { 
-  currentChatUserId = userId; 
-  const user = (await DB.getUsers()).find(u => u.id === userId); 
-  if (user) { 
-    document.getElementById('chatUserName').textContent = user.name; 
-    document.getElementById('chatUserPhone').textContent = user.phone; 
-    document.getElementById('chatUserAvatar').textContent = user.name.charAt(0); 
-  } 
-  document.getElementById('deleteChatBtn').style.display = 'inline-flex'; 
-  loadAdminChatMessages(); 
-  loadChatUsers(); 
+// ---- Chat polling state ----
+// While the chat tab is open: the conversation window polls ONLY the selected
+// thread every 3.5s using the ?since= cursor (append-only, no full re-render),
+// and the customer list refreshes lightly every 20s so new-message badges
+// appear without a manual reload. Both stop when leaving the tab and skip
+// while the browser tab is hidden — well under the 1500 req/15min rate limit.
+let adminChatMsgTimer = null;
+let adminChatListTimer = null;
+let adminChatLastTs = null;
+let adminChatKnownIds = {};
+
+function chatTabIsActive() {
+  const t = document.getElementById('tab-chat');
+  return !!(t && t.classList.contains('active'));
 }
 
-async function loadAdminChatMessages() {
-  if (!currentChatUserId) return; 
+function adminChatBubbleHtml(c) {
+  const cls = c.sender === 'admin' ? 'admin' : 'user';
+  if (c.type === 'image') {
+    return `<div class="chat-message ${cls}"><img src="${c.message}" style="max-width:200px;border-radius:12px;cursor:pointer;" onclick="showImagePreview('${c.message}')"></div>`;
+  }
+  return `<div class="chat-message ${cls}">${c.message}</div>`;
+}
+
+function appendAdminChatMessages(chats) {
   const container = document.getElementById('adminChatMessages');
-  const chats = (await DB.getChats()).filter(c => c.user_id === currentChatUserId || c.userId === currentChatUserId).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+  if (!container || !chats.length) return;
+  const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+  let html = '';
+  chats.forEach(c => {
+    if (!c || adminChatKnownIds[c.id]) return;
+    adminChatKnownIds[c.id] = true;
+    const ts = c.created_at || c.createdAt;
+    if (ts && (!adminChatLastTs || ts > adminChatLastTs)) adminChatLastTs = ts;
+    html += adminChatBubbleHtml(c);
+  });
+  if (!html) return;
+  container.insertAdjacentHTML('beforeend', html);
+  if (nearBottom) container.scrollTop = container.scrollHeight;
+}
+
+async function pollAdminChatNew() {
+  if (!currentChatUserId || !chatTabIsActive() || document.hidden) return;
+  try {
+    const list = await DB.getChatsByUser(currentChatUserId, adminChatLastTs || undefined);
+    const fresh = (list || []).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+    appendAdminChatMessages(fresh);
+  } catch (e) { console.error('chat poll', e); }
+}
+
+function startChatPolling() {
+  stopChatPolling();
+  adminChatMsgTimer = setInterval(function () { if (!document.hidden) pollAdminChatNew(); }, 3500);
+  adminChatListTimer = setInterval(function () { if (!document.hidden && chatTabIsActive()) loadChatUsers(); }, 20000);
+}
+
+function stopChatPolling() {
+  if (adminChatMsgTimer) { clearInterval(adminChatMsgTimer); adminChatMsgTimer = null; }
+  if (adminChatListTimer) { clearInterval(adminChatListTimer); adminChatListTimer = null; }
+}
+
+async function selectChatUser(userId) {
+  currentChatUserId = userId;
+  const user = (await DB.getUsers()).find(u => u.id === userId);
+  if (user) {
+    document.getElementById('chatUserName').textContent = user.name;
+    document.getElementById('chatUserPhone').textContent = user.phone;
+    document.getElementById('chatUserAvatar').textContent = user.name.charAt(0);
+  }
+  document.getElementById('deleteChatBtn').style.display = 'inline-flex';
+  loadAdminChatMessages();
+  loadChatUsers();
+}
+
+async function loadAdminChatMessages(force) {
+  if (!currentChatUserId) return;
+  const container = document.getElementById('adminChatMessages');
+  const chats = (await DB.getChatsByUser(currentChatUserId)).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+  // Full render: reset incremental cursor/dedup state.
+  adminChatKnownIds = {};
+  adminChatLastTs = null;
   container.innerHTML = chats.map(c => {
-    if (c.type === 'image') {
-      return `<div class="chat-message ${c.sender === 'admin' ? 'admin' : 'user'}"><img src="${c.message}" style="max-width:200px;border-radius:12px;cursor:pointer;" onclick="showImagePreview('${c.message}')"></div>`;
-    }
-    return `<div class="chat-message ${c.sender === 'admin' ? 'admin' : 'user'}">${c.message}</div>`;
+    adminChatKnownIds[c.id] = true;
+    const ts = c.created_at || c.createdAt;
+    if (ts && (!adminChatLastTs || ts > adminChatLastTs)) adminChatLastTs = ts;
+    return adminChatBubbleHtml(c);
   }).join('');
   container.scrollTop = container.scrollHeight;
 }
 
 async function sendAdminMessage() {
-  if (!currentChatUserId) return; 
-  const input = document.getElementById('adminChatInput'); 
-  const text = input.value.trim(); 
+  if (!currentChatUserId) return;
+  const input = document.getElementById('adminChatInput');
+  const text = input.value.trim();
   if (!text) return;
 
-  const chat = { 
-    id: 'chat_' + Date.now(), 
-    user_id: currentChatUserId, 
+  const nowIso = new Date().toISOString();
+  const chat = {
+    id: 'chat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    user_id: currentChatUserId,
     userId: currentChatUserId,
-    sender: 'admin', 
-    message: text, 
-    type: 'text', 
-    createdAt: new Date().toISOString(),
-    created_at: new Date().toISOString()
+    sender: 'admin',
+    message: text,
+    type: 'text',
+    createdAt: nowIso,
+    created_at: nowIso
   };
 
-  await DB.createChat(chat);
-  input.value = ''; 
-  loadAdminChatMessages(); 
+  // Optimistic: show our own message instantly; the id is registered so the
+  // next poll skips the server's copy of the same record.
+  input.value = '';
+  adminChatKnownIds[chat.id] = true;
+  if (!adminChatLastTs || chat.created_at > adminChatLastTs) adminChatLastTs = chat.created_at;
+  const container = document.getElementById('adminChatMessages');
+  container.insertAdjacentHTML('beforeend', adminChatBubbleHtml(chat));
+  container.scrollTop = container.scrollHeight;
+  try {
+    await DB.createChat(chat);
+  } catch (e) { console.error(e); showToast((e && e.message) ? e.message : 'ส่งข้อความไม่สำเร็จ', 'alert'); }
+  pollAdminChatNew();
   loadChatUsers();
 }
 
 async function sendAdminImage() {
-  if (!currentChatUserId) return; 
-  const input = document.getElementById('adminChatImage'); 
-  const file = input.files[0]; 
+  if (!currentChatUserId) return;
+  const input = document.getElementById('adminChatImage');
+  const file = input.files[0];
   if (!file) return;
+
+  const sendImage = async (imageUrl) => {
+    const nowIso = new Date().toISOString();
+    const chat = {
+      id: 'chat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      user_id: currentChatUserId,
+      userId: currentChatUserId,
+      sender: 'admin',
+      message: imageUrl,
+      type: 'image',
+      createdAt: nowIso,
+      created_at: nowIso
+    };
+    adminChatKnownIds[chat.id] = true;
+    if (!adminChatLastTs || chat.created_at > adminChatLastTs) adminChatLastTs = chat.created_at;
+    const container = document.getElementById('adminChatMessages');
+    container.insertAdjacentHTML('beforeend', adminChatBubbleHtml(chat));
+    container.scrollTop = container.scrollHeight;
+    await DB.createChat(chat);
+    pollAdminChatNew();
+    loadChatUsers();
+  };
 
   let imageUrl = null;
   if (isSupabaseConnected()) {
@@ -1581,37 +1712,14 @@ async function sendAdminImage() {
   if (!imageUrl) {
     try {
       const url = await resizeImageFile(file, 1000, 0.8);
-      const chat = { 
-        id: 'chat_' + Date.now(), 
-        user_id: currentChatUserId, 
-        userId: currentChatUserId,
-        sender: 'admin', 
-        message: url, 
-        type: 'image', 
-        createdAt: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      };
-      await DB.createChat(chat);
-      loadAdminChatMessages(); 
-      loadChatUsers();
+      await sendImage(url);
     } catch(e) { console.error(e); showToast('ส่งรูปไม่สำเร็จ: ' + ((e && e.message) || e), 'alert'); }
     input.value = '';
     return;
   }
 
-  const chat = { 
-    id: 'chat_' + Date.now(), 
-    user_id: currentChatUserId, 
-    userId: currentChatUserId,
-    sender: 'admin', 
-    message: imageUrl, 
-    type: 'image', 
-    createdAt: new Date().toISOString(),
-    created_at: new Date().toISOString()
-  };
-  await DB.createChat(chat);
-  loadAdminChatMessages(); 
-  loadChatUsers();
+  try { await sendImage(imageUrl); } catch(e) { console.error(e); showToast('ส่งรูปไม่สำเร็จ: ' + ((e && e.message) || e), 'alert'); }
+  input.value = '';
 }
 
 async function deleteUserChatHistory() { 
