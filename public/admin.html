@@ -370,7 +370,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <!-- DASHBOARD -->
 <div class="tab-content active p-6" id="tab-dashboard">
 <!-- ปุ่มแก้ไขข้อความหน้าแรก (เพิ่มใหม่) -->
-<div class="mb-6"><button class="btn-primary" onclick="openHomeTextEditor()"><i class="fas fa-pen"></i> แก้ไขข้อความหน้าแรก</button></div>
+<div class="mb-6"><button class="btn-primary" id="homeTextEditBtn" onclick="openHomeTextEditor()"><i class="fas fa-pen"></i> แก้ไขข้อความหน้าแรก</button></div>
 <div class="grid-4 mb-6">
 <div class="stat-card">
 <div class="flex items-center justify-between mb-2">
@@ -491,7 +491,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div class="tab-content p-6" id="tab-fund">
 <div class="flex justify-between items-center mb-6">
 <h2 class="text-2xl font-bold text-white" id="fundTitle" data-i18n="fund">จัดการกองทุน</h2>
-<select id="fundFilter" onchange="loadFundInvestments()" style="width: 170px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="active" data-i18n="optActive">กำลังลงทุน</option><option value="expired" data-i18n="optExpired">ครบกำหนด รอผล</option><option value="win" data-i18n="optWin">ชนะ</option><option value="lose" data-i18n="optFundLose">ขาดทุน</option></select>
+<select id="fundFilter" onchange="loadFundInvestments()" style="width: 170px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="active" data-i18n="optActive">กำลังลงทุน</option><option value="expired" data-i18n="optExpired">ครบกำหนด รอผล</option><option value="win" data-i18n="optWin">กำไร</option></select>
 </div>
 
 <div class="card mb-6">
@@ -563,7 +563,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div class="form-group"><label>ที่อยู่ USDT (TRC20)</label><input id="p2pAddress" placeholder="ที่อยู่กระเป๋า USDT" type="text"/></div>
 <div class="form-group"><label data-i18n="lblWithdrawFee">ค่าธรรมเนียมถอน (USDT)</label><input id="p2pWithdrawFee" placeholder="1" type="number" min="0" step="0.01"/></div>
 <div class="form-group"><label data-i18n="lblMinWithdraw">ขั้นต่ำการถอน (USDT)</label><input id="p2pMinWithdraw" placeholder="10" type="number" min="0"/></div>
-<button class="btn-primary w-full" onclick="saveP2PSettings()"><i class="fas fa-save"></i> บันทึกการตั้งค่า P2P</button>
+<button class="btn-primary w-full" onclick="saveP2PSettings(this)"><i class="fas fa-save"></i> บันทึกการตั้งค่า P2P</button>
 </div>
 </div>
 </div>
@@ -580,7 +580,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div id="packagesList" class="space-y-3"></div>
 <div class="flex gap-2">
 <button class="btn-primary" onclick="addPackageRow()"><i class="fas fa-plus"></i> <span data-i18n="btnAddPkg">เพิ่มแพ็คเกจ</span></button>
-<button class="btn-success" onclick="savePackages()"><i class="fas fa-save"></i> <span data-i18n="btnSavePkg">บันทึกแพ็คเกจ</span></button>
+<button class="btn-success" onclick="savePackages(this)"><i class="fas fa-save"></i> <span data-i18n="btnSavePkg">บันทึกแพ็คเกจ</span></button>
 </div>
 </div>
 </div>
@@ -673,7 +673,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 </div>
 <div class="form-group"><label data-i18n="lblWelcome">ข้อความต้อนรับ (หน้าแรก)</label><textarea id="settingsWelcome" placeholder="ข้อความต้อนรับ..."></textarea><small style="color:#9ca3af;font-size:12px;">เว้นว่าง = ไม่แสดงข้อความบนหน้าแรก</small></div>
 <div class="form-group"><label data-i18n="lblAbout">เกี่ยวกับเรา (About Us)</label><textarea id="settingsAboutUs" placeholder="ข้อความเกี่ยวกับเรา..." rows="8"></textarea></div>
-<button class="btn-primary w-full" onclick="saveSettings()"><i class="fas fa-save"></i> <span data-i18n="btnSaveSettings">บันทึกการตั้งค่า</span></button>
+<button class="btn-primary w-full" onclick="saveSettings(this)"><i class="fas fa-save"></i> <span data-i18n="btnSaveSettings">บันทึกการตั้งค่า</span></button>
 <div class="form-group"><label>สีปุ่มเริ่มต้นใช้งาน</label><input id="settingsCtaBtnBg" type="color" value="#000000" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
 <div class="form-group"><label>สีตัวหนังสือปุ่มเริ่มต้นใช้งาน</label><input id="settingsCtaBtnText" type="color" value="#ffffff" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
 <button class="btn-primary w-full" onclick="saveCtaColors()"><i class="fas fa-save"></i> บันทึกสีปุ่ม</button>
@@ -707,12 +707,12 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 </div></div></div>
 <div class="modal" id="editDepositModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขรายการฝากเงิน</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editDepositModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>จำนวนเงิน (USDT)</label><input id="editDepositAmount" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>สถานะ</label><select id="editDepositStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved">อนุมัติ</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option></select></div><button class="btn-primary w-full" onclick="saveDepositEdit()">บันทึกการแก้ไข</button></div></div></div>
 <div class="modal" id="editWithdrawModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขรายการถอนเงิน</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editWithdrawModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>จำนวนเงิน (USDT)</label><input id="editWithdrawAmount" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>สถานะ</label><select id="editWithdrawStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved">อนุมัติ</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option><option value="failed" data-i18n="optFailed">ล้มเหลว</option></select></div><div class="form-group"><label>หมายเหตุ</label><textarea id="editWithdrawNote" style="background:#fbbf24 !important;color:#000 !important;"></textarea></div><button class="btn-primary w-full" onclick="saveWithdrawEdit()">บันทึกการแก้ไข</button></div></div></div>
-<div class="modal" id="addAdminModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">เพิ่มผู้ดูแลระบบ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('addAdminModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อผู้ใช้</label><input id="newAdminUsername" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ชื่อ</label><input id="newAdminName" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>รหัสผ่าน</label><input id="newAdminPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ยืนยันรหัสผ่าน</label><input id="newAdminConfirmPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><button class="btn-primary w-full" onclick="addAdmin()">เพิ่มผู้ดูแลระบบ</button></div></div></div>
+<div class="modal" id="addAdminModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">เพิ่มผู้ดูแลระบบ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('addAdminModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อผู้ใช้</label><input id="newAdminUsername" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ชื่อ</label><input id="newAdminName" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>รหัสผ่าน</label><input id="newAdminPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ยืนยันรหัสผ่าน</label><input id="newAdminConfirmPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><button class="btn-primary w-full" id="addAdminSubmitBtn" onclick="addAdmin(this)">เพิ่มผู้ดูแลระบบ</button></div></div></div>
 <div class="modal" id="depositSlipModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">หลักฐานการโอน (Slip)</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('depositSlipModal')"><i class="fas fa-times"></i></button></div><div class="text-center"><img id="depositSlipImg" src="" class="slip-preview" style="display:none;"><div id="depositSlipNoImg" class="text-gray-500 py-8">ไม่มีรูปสลิป</div></div></div></div>
 <div class="modal" id="kycDetailModal"><div class="modal-content xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">รายละเอียด KYC</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('kycDetailModal')"><i class="fas fa-times"></i></button></div><div id="kycDetailContent"></div></div></div>
 <div class="modal" id="imagePreviewModal"><div class="modal-content" style="max-width:700px;"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">ดูรูปภาพ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('imagePreviewModal')"><i class="fas fa-times"></i></button></div><div class="text-center"><img id="previewImage" src="" style="max-width:100%;border-radius:12px;"></div></div></div>
 <!-- Modal แก้ไขข้อความหน้าแรก (เพิ่มใหม่) -->
-<div class="modal" id="homeTextModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-pen text-yellow-400 mr-2"></i>แก้ไขข้อความหน้าแรก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('homeTextModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อเว็บไซต์</label><input id="homeEditSiteName" type="text" placeholder="Binance Gold" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ข้อความต้อนรับ (หน้าแรก)</label><textarea id="homeEditWelcome" placeholder="ข้อความต้อนรับ..." style="background:#fbbf24 !important;color:#000 !important;"></textarea><small style="color:#9ca3af;font-size:12px;">เว้นว่าง = ไม่แสดงข้อความบนหน้าแรก</small></div><button class="btn-primary w-full" onclick="saveHomeText()"><i class="fas fa-save"></i> บันทึก</button></div></div></div>
+<div class="modal" id="homeTextModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-pen text-yellow-400 mr-2"></i>แก้ไขข้อความหน้าแรก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('homeTextModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อเว็บไซต์</label><input id="homeEditSiteName" type="text" placeholder="Binance Gold" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ข้อความต้อนรับ (หน้าแรก)</label><textarea id="homeEditWelcome" placeholder="ข้อความต้อนรับ..." style="background:#fbbf24 !important;color:#000 !important;"></textarea><small style="color:#9ca3af;font-size:12px;">เว้นว่าง = ไม่แสดงข้อความบนหน้าแรก</small></div><button class="btn-primary w-full" onclick="saveHomeText(this)"><i class="fas fa-save"></i> บันทึก</button></div></div></div>
 
 <script>
 
@@ -1263,12 +1263,15 @@ async function checkAdminAuth() {
 
 // จำกัดสิทธิ์: ผู้ดูแลระบบที่ถูกเพิ่ม (ไม่ใช่ superadmin) ไม่เห็นเมนู ผู้ดูแลระบบ / ตั้งค่า P2P / ตั้งค่าเว็บไซต์
 function applyAdminRoleRestrictions() {
-  const isSuper = !!(currentAdmin && currentAdmin.role === 'superadmin');
+  const isSuper = !!(currentAdmin && (currentAdmin.role === 'superadmin' || currentAdmin.role === 'super'));
   ['menuAdmins', 'menuP2P', 'menuSettings'].forEach(id => {
     const span = document.getElementById(id);
     const item = span ? span.closest('.sidebar-item') : null;
     if (item) item.style.display = isSuper ? '' : 'none';
   });
+  // ปุ่มแก้ข้อความหน้าแรก = site settings → superadmin เท่านั้น (server reject PUT /api/settings อยู่แล้ว)
+  const homeBtn = document.getElementById('homeTextEditBtn');
+  if (homeBtn) homeBtn.style.display = isSuper ? '' : 'none';
 }
 
 function escNote(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -1312,7 +1315,7 @@ async function refreshAdminData() {
 
 function showAdminTab(tabId, element) {
   // guard สิทธิ์ sub-admin
-  if (currentAdmin && currentAdmin.role !== 'superadmin' && ['admins', 'p2p', 'settings'].includes(tabId)) {
+  if (currentAdmin && !['superadmin', 'super'].includes(currentAdmin.role) && ['admins', 'p2p', 'settings'].includes(tabId)) {
     tabId = 'dashboard';
     element = document.querySelector('.sidebar-item');
   }
@@ -1365,7 +1368,8 @@ async function openHomeTextEditor() {
   document.getElementById('homeEditWelcome').value = s.welcomeText || s.welcome_text || '';
   openModal('homeTextModal');
 }
-async function saveHomeText() {
+async function saveHomeText(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
   const siteName = document.getElementById('homeEditSiteName').value;
   const welcomeText = document.getElementById('homeEditWelcome').value;
@@ -1375,6 +1379,7 @@ async function saveHomeText() {
   closeModal('homeTextModal');
   showToast('บันทึกข้อความหน้าแรกสำเร็จ', 'success');
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 }
 
 function startAutoRefresh() {
@@ -1400,8 +1405,8 @@ function startAutoRefresh() {
       // ไม่ต้อง reload ซ้ำในรอบ 30s — กัน re-render ทั้งกระดานและ scroll กระตุก
     }
   }, 30000);
-  // Light alert poll ทุก 10s: ดึงเฉพาะ 4 list ที่ใช้ตัดสินเสียงแจ้งเตือน (ฝาก/ถอน/เทรด/แชท)
-  // = 24 req/นาที อยู่ในงบ rate limit — เสียงดังเร็วขึ้นโดยไม่รอ full refresh 30s
+  // Light alert poll ทุก 10s: ดึง 5 list (ฝาก/ถอน/เทรด/แชท/กองทุน)
+  // = 30 req/นาที อยู่ในงบ rate limit — เสียงดังเร็วขึ้นโดยไม่รอ full refresh 30s
   if (alertPollInterval) clearInterval(alertPollInterval);
   alertPollInterval = setInterval(() => {
     if (document.hidden) return;
@@ -1412,11 +1417,14 @@ function startAutoRefresh() {
 // Poll เบาๆ เฉพาะข้อมูลที่จำเป็นสำหรับเสียงแจ้งเตือน (ไม่ re-render UI, ไม่แตะ badge ตัวเลข)
 async function pollAlertsLight() {
   try {
-    const [deps, wds, trs, chs] = await Promise.all([DB.getDeposits(), DB.getWithdraws(), DB.getTrades(), DB.getChats()]);
+    const [deps, wds, trs, chs, fds] = await Promise.all([DB.getDeposits(), DB.getWithdraws(), DB.getTrades(), DB.getChats(), DB.getFunds()]);
     handleDepositAlerts(deps || []);
     handleWithdrawAlerts(wds || []);
     handleTradeAlerts(trs || []);
     handleChatAlerts(chs || []);
+    // กองทุน: อัปเดต badge ให้ทันข้อมูล (ไม่มีเสียงแจ้งเตือนเฉพาะ — เสียงเทรดครอบคลุมอยู่แล้ว)
+    const badgeFundEl = document.getElementById('badgeFund');
+    if (badgeFundEl) badgeFundEl.textContent = (fds || []).filter(f => f.status === 'active').length;
   } catch (e) { console.warn('alert poll', e); }
 }
 
@@ -2099,33 +2107,38 @@ async function loadAdmins() {
   document.getElementById('adminsTable').innerHTML = admins.map(a => `<tr><td class="font-bold text-white">${a.username}</td><td class="text-gray-300">${a.name || '-'}</td><td><span class="badge badge-${a.role === 'superadmin' ? 'approved' : 'pending'}">${a.role === 'superadmin' ? 'Super' : 'Admin'}</span></td><td class="text-xs text-gray-500">${new Date(a.created_at || a.createdAt).toLocaleDateString()}</td><td><div class="action-btns">${a.role !== 'superadmin' ? `<button class="btn-danger text-xs" onclick="deleteAdmin('${a.id}')"><i class="fas fa-trash"></i></button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="5" class="text-center text-gray-500 py-8">ไม่มีผู้ดูแลระบบ</td></tr>';
 }
 
-async function addAdmin() {
+async function addAdmin(btn) {
+  // feedback ทันทีที่กด + disable กันกดซ้ำ (double-submit)
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.dataset.label = btn.textContent; btn.textContent = 'กำลังบันทึก...'; }
   try {
-  const username = document.getElementById('newAdminUsername').value.trim(); 
+  const username = document.getElementById('newAdminUsername').value.trim();
   const name = document.getElementById('newAdminName').value.trim();
-  const password = document.getElementById('newAdminPassword').value; 
+  const password = document.getElementById('newAdminPassword').value;
   const confirmPassword = document.getElementById('newAdminConfirmPassword').value;
-  if (!username || !password) { showToast('กรอกข้อมูลให้ครบ', 'alert'); return; } 
+  if (!username || !password) { showToast('กรอกข้อมูลให้ครบ', 'alert'); return; }
+  if (String(password).length < 4) { showToast('รหัสผ่านต้องยาวอย่างน้อย 4 ตัวอักษร', 'alert'); return; }
   if (password !== confirmPassword) { showToast('รหัสผ่านไม่ตรงกัน', 'alert'); return; }
 
-  const admins = await DB.getAdmins(); 
+  const admins = await DB.getAdmins();
   if (admins.find(a => a.username === username)) { showToast('ชื่อผู้ใช้ซ้ำ', 'alert'); return; }
 
-  const newAdmin = { 
-    id: 'admin_' + Date.now(), 
-    username, 
-    name, 
-    password, 
-    role: 'admin', 
+  const newAdmin = {
+    id: 'admin_' + Date.now(),
+    username,
+    name,
+    password,
+    role: 'admin',
     createdAt: new Date().toISOString(),
     created_at: new Date().toISOString()
   };
 
   await DB.createAdmin(newAdmin);
-  showToast('เพิ่มผู้ดูแลสำเร็จ', 'success'); 
-  closeModal('addAdminModal'); 
+  showToast('เพิ่มผู้ดูแลสำเร็จ', 'success');
+  ['newAdminUsername','newAdminName','newAdminPassword','newAdminConfirmPassword'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  closeModal('addAdminModal');
   loadAdmins();
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; if (btn.dataset.label) btn.textContent = btn.dataset.label; } }
 }
 
 async function deleteAdmin(id) { 
@@ -2163,7 +2176,8 @@ function handleP2PQRUpload(input) {
   }).finally(function() { input.value = ''; });
 }
 
-async function saveP2PSettings() {
+async function saveP2PSettings(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
   const updates = {
     p2pAddress: document.getElementById('p2pAddress').value,
@@ -2174,6 +2188,7 @@ async function saveP2PSettings() {
   await DB.updateSettings(updates);
   showToast('บันทึกการตั้งค่า P2P สำเร็จ', 'success');
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 }
 
 // ==================== SETTINGS ====================
@@ -2296,7 +2311,8 @@ async function deleteSiteBg() {
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
-async function saveSettings() {
+async function saveSettings(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
   const updates = {
     withdrawFee: parseFloat(document.getElementById('settingsWithdrawFee').value) || 1,
@@ -2314,6 +2330,7 @@ async function saveSettings() {
   if (sidebarName) sidebarName.textContent = updates.siteName || 'Binance Gold';
   showToast('บันทึกการตั้งค่าสำเร็จ', 'success');
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 }
 
 // ==================== REALTIME CALLBACKS ====================
@@ -2469,7 +2486,8 @@ function removePackageRow(index) {
   renderPackagesList();
 }
 
-async function savePackages() {
+async function savePackages(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
   const percents = document.querySelectorAll('.package-percent');
   const minutes = document.querySelectorAll('.package-minutes');
@@ -2486,6 +2504,7 @@ async function savePackages() {
   await DB.updateSettings({ tradePackages: JSON.stringify(currentPackages) });
   showToast(tAdmin('pkgSaved'), 'success');
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 }
 
 // ==================== FUND ADMIN (จัดการกองทุน) ====================
@@ -2551,34 +2570,31 @@ async function loadFundInvestments() {
   const now = Date.now();
   if (filter === 'active') funds = funds.filter(f => f.status === 'active' && new Date(f.endTime).getTime() > now);
   else if (filter === 'expired') funds = funds.filter(f => f.status === 'active' && new Date(f.endTime).getTime() <= now);
-  else if (filter === 'win') funds = funds.filter(f => f.status === 'completed' && f.result === 'win');
-  else if (filter === 'lose') funds = funds.filter(f => f.status === 'completed' && f.result === 'lose');
+  else if (filter === 'win') funds = funds.filter(f => f.status === 'completed');
   const tbody = document.getElementById('fundTable');
   if (!tbody) return;
   if (funds.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่มีรายการลงทุน</td></tr>'; return; }
   tbody.innerHTML = funds.map(f => {
     const user = users.find(u => u.id === f.user_id || u.id === f.userId);
     const amount = parseFloat(f.amount) || 0;
-    const profit = amount * (parseFloat(f.percent) || 0) / 100;
-    const profitMax = profit * 1.8; // กำไรจริงสุ่มช่วง base..base*1.8 ตอน settle
+    const profit = amount * (parseFloat(f.percent) || 0) / 100; // กำไรเป๊ะตามเปอร์เซ็นต์ ไม่สุ่ม
     const end = new Date(f.endTime).getTime();
     const expired = now >= end;
     const remain = expired ? 'ครบกำหนด' : fmtFundRemain(end - now);
     let statusHtml, actions;
     if (f.status === 'active') {
-      // แสดงผลที่แอดมินตั้งไว้ล่วงหน้า (รอครบเวลา)
-      const preset = f.result ? (f.result === 'win' ? ' → ชนะ' : ' → ขาดทุน') : '';
+      // ระบบอัตโนมัติเต็มรูปแบบ: กองทุน settle เป็นกำไรเสมอเมื่อครบเวลา แอดมินไม่ต้องกำหนดผล
       statusHtml = expired
-        ? '<span class="badge badge-pending">ครบกำหนด รอผล' + preset + '</span>'
-        : '<span class="badge badge-pending">กำลังลงทุน' + preset + '</span>';
-      const winActive = f.result === 'win' ? ' style="box-shadow:0 0 0 2px #22c55e;"' : '';
-      const loseActive = f.result === 'lose' ? ' style="box-shadow:0 0 0 2px #ef4444;"' : '';
-      actions = `<button class="btn-success text-xs"${winActive} onclick="setFundResult('${f.id}','win')"><i class="fas fa-trophy"></i> ชนะ</button><button class="btn-danger text-xs"${loseActive} onclick="setFundResult('${f.id}','lose')"><i class="fas fa-times-circle"></i> ขาดทุน</button>`;
+        ? '<span class="badge badge-pending">ครบกำหนด กำลังจ่ายอัตโนมัติ</span>'
+        : '<span class="badge badge-pending">กำลังลงทุน</span>';
+      actions = expired
+        ? `<button class="btn-success text-xs" onclick="settleFundNow('${f.id}')"><i class="fas fa-bolt"></i> จ่ายกำไรตอนนี้</button>`
+        : '<span class="text-xs text-gray-500">อัตโนมัติ</span>';
     } else {
-      statusHtml = f.result === 'win' ? '<span class="badge badge-approved">ชนะ</span>' : '<span class="badge badge-rejected">ขาดทุน</span>';
+      statusHtml = '<span class="badge badge-approved">กำไร</span>';
       actions = '<span class="text-xs text-gray-500">เสร็จสิ้น</span>';
     }
-    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')} ${uidBadge(userCodeOf(f, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">${f.status === 'completed' ? (f.result === 'win' ? '+$' + (parseFloat(f.profit) || 0).toFixed(2) : '-$' + Math.abs(parseFloat(f.profit) || 0).toFixed(2)) : '+' + f.percent + '% ($' + profit.toLocaleString() + '–$' + profitMax.toLocaleString() + ')'}</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
+    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')} ${uidBadge(userCodeOf(f, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">${f.status === 'completed' ? '+$' + (parseFloat(f.profit) || 0).toFixed(2) : '+' + f.percent + '% ($' + profit.toLocaleString() + ')'}</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
   }).join('');
 }
 
@@ -2588,16 +2604,16 @@ function fmtFundRemain(ms) {
   return d + 'วัน ' + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
 
-// แอดมินตั้งผลล่วงหน้า — ระบบจะแสดงผลและจ่ายเงินอัตโนมัติเมื่อครบเวลาที่กำหนด
-async function setFundResult(fundId, result) {
-  try { const out=await BinanceGoldAPI.fetch('/api/admin/funds/'+encodeURIComponent(fundId)+'/set-result',{method:'POST',body:{result}}); const f=out.fund; showToast('กำหนดผล: '+(result==='win'?'ชนะ':'ขาดทุน')+(Date.now()>=new Date(f.endTime).getTime()?' — ครบเวลาแล้ว':' แล้ว'),'success'); loadFundInvestments(); loadDashboard(); updateBadges(); }
-  catch(e){showToast('ไม่สามารถกำหนดผลได้','alert');}
+// ปุ่ม "จ่ายกำไรตอนนี้" (ทางเลือก) — ผลเป็นกำไรเสมอ (win) ตามเปอร์เซ็นต์เป๊ะ
+async function settleFundNow(fundId) {
+  try { await BinanceGoldAPI.fetch('/api/admin/funds/'+encodeURIComponent(fundId)+'/settle',{method:'POST',body:{}}); showToast('จ่ายกำไรกองทุนสำเร็จ','success'); loadFundInvestments(); loadDashboard(); updateBadges(); }
+  catch(e){showToast('ไม่สามารถปิดผลกองทุนได้','alert');}
 }
 
-// ปิดผลกองทุนที่ครบเวลาและมีผลตั้งไว้แล้ว (ทุกสมาชิก) — คืนเงินต้น+กำไรถ้าชนะ
+// ปิดผลกองทุนที่ครบเวลา (ทุกสมาชิก) — กำไรเสมอ คืนเงินต้น+กำไร
 async function processDueFundSettlements() {
   const funds = await getFundInvestments(); const now=Date.now();
-  for(const f of funds){ if(f.status!=='active'||!f.result||!f.endTime||new Date(f.endTime).getTime()>now) continue;
+  for(const f of funds){ if(f.status!=='active'||!f.endTime||new Date(f.endTime).getTime()>now) continue;
     try { await BinanceGoldAPI.fetch('/api/admin/funds/'+encodeURIComponent(f.id)+'/settle',{method:'POST',body:{}}); } catch(e) { console.warn('fund settlement deferred',e); }
   }
 }

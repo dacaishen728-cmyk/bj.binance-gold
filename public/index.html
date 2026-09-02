@@ -590,13 +590,13 @@ html[data-theme="light"] { color-scheme: light; }
 <div id="tradeContent" class="hidden">
 <div class="p-4 border-b border-[#1a1a1a] flex justify-between items-center bg-[#050505]">
 <div class="flex items-center gap-2">
-<span class="font-bold text-lg" id="activeSymbol">BTC/USDT</span>
+<span class="font-bold text-lg" id="activeSymbol">XAU/USD</span>
 <span class="green text-sm price-display" id="activePrice">$0.00</span>
 </div>
 <button class="text-gray-400 hover:text-white transition text-sm" onclick="refreshChart()">Refresh</button>
 </div>
 <div class="chart-container" id="chartContainer">
-<iframe id="tvChart" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=BINANCE:BTCUSDT&interval=15&theme=dark&style=1&timezone=Asia/Bangkok"></iframe>
+<iframe id="tvChart" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=OANDA:XAUUSD&interval=15&theme=dark&style=1&timezone=Asia/Bangkok"></iframe>
 </div>
 <div class="p-4">
 <div class="grid grid-cols-2 gap-4">
@@ -1156,7 +1156,7 @@ QR Code
 // ==================== DATA & CONFIG ====================
 let currentLang = localStorage.getItem('bg_lang') || 'th';
 let currentUser = null;
-let currentSymbol = 'BTCUSDT';
+let currentSymbol = 'XAUUSD'; // ค่าเริ่มต้นหน้าซื้อขาย: ทองคำ XAU/USD
 let marketPrices = {};
 let priceUpdateInterval = null;
 let priceStream = null;        // Binance WebSocket
@@ -1884,7 +1884,7 @@ function selectSymbol(sym) {
   const m = MARKETS.find(x => x.symbol === sym);
   if (!m) return;
   currentSymbol = sym;
-  document.getElementById('activeSymbol').textContent = m.name + '/USDT';
+  document.getElementById('activeSymbol').textContent = m.name.indexOf('/') >= 0 ? m.name : m.name + '/USDT';
   const priceData = marketPrices[sym] || { price: m.basePrice };
   document.getElementById('activePrice').textContent = '$' + priceData.price.toLocaleString();
   document.getElementById('tvChart').src = buildChartUrl(m);
@@ -1910,6 +1910,7 @@ let tradeOrderPkgs = [];
 let tradeOrderSelected = -1;
 let trunTimer = null;
 let trunTradeId = null;
+let trunCache = null; // cache เทรดที่กำลังนับถอยหลัง — ไม่เรียก API ทุกวินาที ดึงใหม่เฉพาะตอนเริ่ม/ใกล้หมดเวลา
 const TRUN_C = 2 * Math.PI * 72; // เส้นรอบวงแหวน r=72
 
 async function openTradeOrder(type) {
@@ -2021,6 +2022,7 @@ async function confirmTradeOrder() {
 // ---------- Modal นับถอยหลัง + แสดงผลอัตโนมัติเมื่อครบเวลา ----------
 async function openTradeRunning(tradeId) {
   trunTradeId = tradeId;
+  trunCache = null;
   const trades = await DB.getTradesByUser(currentUser.id);
   const tr = trades.find(x => x.id === tradeId);
   if (!tr) return;
@@ -2034,14 +2036,20 @@ async function openTradeRunning(tradeId) {
   openModal('tradeRunningModal');
   await tickTradeRunning();
   if (trunTimer) clearInterval(trunTimer);
-  trunTimer = setInterval(function(){ if(!document.hidden) tickTradeRunning(); }, 2500);
+  // tick ทุก 1 วินาที — เวลาคำนวณจาก endTime - Date.now() ทุกครั้ง จึงไม่สะสมคลาดเคลื่อนแม้แท็บไม่ active
+  trunTimer = setInterval(tickTradeRunning, 1000);
 }
 
 async function tickTradeRunning() {
   if (!trunTradeId || !currentUser) return;
-  const trades = await DB.getTradesByUser(currentUser.id);
-  const tr = trades.find(x => x.id === trunTradeId);
-  if (!tr) { closeTradeRunning(); return; }
+  let tr = (trunCache && trunCache.id === trunTradeId) ? trunCache : null;
+  // ดึงข้อมูลจาก server เฉพาะตอนเปิดครั้งแรกหรือใกล้/เลยเวลาสิ้นสุด (เช็คผล settle) — วินาทีอื่นนับจาก cache
+  if (!tr || Date.now() >= new Date(tr.endTime).getTime() - 1100) {
+    const trades = await DB.getTradesByUser(currentUser.id);
+    tr = trades.find(x => x.id === trunTradeId);
+    if (!tr) { closeTradeRunning(); return; }
+    trunCache = tr;
+  }
 
   // ราคาปัจจุบัน (live จากตลาด)
   const cur = (marketPrices[tr.symbol] && marketPrices[tr.symbol].price) || parseFloat(tr.price);
@@ -2061,7 +2069,8 @@ async function tickTradeRunning() {
   const pf = document.getElementById('trunProfit');
   const center = document.getElementById('trunCenter');
 
-  if (tr.status === 'pending') {
+  // แสดงผลแพ้/ชนะได้เฉพาะเมื่อเวลาเหลือ 0 เท่านั้น — ถ้า admin ปิดผลก่อนเวลา ยังนับถอยหลังต่อจนครบ
+  if (remain > 0 || tr.status === 'pending') {
     if (remain > 0) {
       center.textContent = Math.ceil(remain / 1000) + 's';
       center.style.color = '#fff';
@@ -2094,6 +2103,7 @@ async function tickTradeRunning() {
     prog.style.background = win ? '#22c55e' : '#ef4444';
     pf.textContent = (win ? '+' : '-') + '$' + profit.toFixed(2);
     pf.style.color = win ? '#22c55e' : '#ef4444';
+    trunCache = null;
     if (trunTimer) { clearInterval(trunTimer); trunTimer = null; }
   }
 }
@@ -2101,6 +2111,7 @@ async function tickTradeRunning() {
 function closeTradeRunning() {
   if (trunTimer) { clearInterval(trunTimer); trunTimer = null; }
   trunTradeId = null;
+  trunCache = null;
   closeModal('tradeRunningModal');
   if (currentUser) { loadTradeHistory(); loadWalletData(); }
 }
@@ -2866,19 +2877,13 @@ async function processFundSettlements() {
         } catch (e) { console.error('settleFund failed:', e); }
         continue;
       }
-      // Fallback โหมด offline/localStorage (ไม่มี Worker API) — กำไรคำนวณเป๊ะตาม % (ไม่สุ่ม)
-      const profit = f.result === 'win' ? Math.round(amount * (parseFloat(f.percent) || 0) / 100 * 100) / 100 : -randomizeLoss(amount);
-      if (f.result === 'win') {
-        currentUser.balance = (parseFloat(currentUser.balance) || 0) + amount + profit;
-        await DB.updateUser(currentUser.id, { balance: currentUser.balance });
-        await DB.setCurrentUser(currentUser);
-        showToast(t('fundSettledWin') + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
-      } else if (f.result === 'lose') {
-        showToast(t('fundSettledLoss') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
-      } else {
-        continue; // offline mode ไม่สามารถสุ่มผลได้ ปล่อยให้ server settle
-      }
-      await DB.updateFund(f.id, { status: 'completed', profit: profit, settledAt: new Date().toISOString() });
+      // Fallback โหมด offline/localStorage (ไม่มี Worker API) — กองทุนกำไรเสมอ คำนวณเป๊ะตาม % (ไม่สุ่ม)
+      const profit = Math.round(amount * (parseFloat(f.percent) || 0) / 100 * 100) / 100;
+      currentUser.balance = (parseFloat(currentUser.balance) || 0) + amount + profit;
+      await DB.updateUser(currentUser.id, { balance: currentUser.balance });
+      await DB.setCurrentUser(currentUser);
+      showToast(t('fundSettledWin') + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+      await DB.updateFund(f.id, { status: 'completed', result: 'win', profit: profit, settledAt: new Date().toISOString() });
       settled++;
     }
   }
@@ -3050,16 +3055,15 @@ async function renderFundList() {
   el.innerHTML = list.map(f => {
     const amount = parseFloat(f.amount) || 0;
     const isDone = f.status === 'completed';
-    const isWin = f.result === 'win';
-    // รายการที่ปิดแล้วใช้ยอด profit จริงที่บันทึกตอน settle; รายการ active แสดงค่าประมาณการ base
+    // กองทุน: กำไรเสมอ ไม่มีผลแพ้
     // active: คำนวณเป๊ะตาม % ของแพ็กเกจ (เงินต้น × %/100); done: ใช้ยอดจริงที่บันทึกตอน settle
     const profit = isDone ? Math.abs(parseFloat(f.profit) || 0) : amount * (parseFloat(f.percent) || 0) / 100;
-    const total = isDone ? (isWin ? amount + profit : amount - profit) : amount + profit;
-    const ringColor = isDone ? (isWin ? '#22c55e' : '#ef4444') : '#22c55e';
+    const total = amount + profit;
+    const ringColor = '#22c55e';
     let ringText, ringFrac;
     if (isDone) {
       ringFrac = 1;
-      ringText = isWin ? 'ชนะ' : 'แพ้';
+      ringText = 'กำไร';
     } else {
       const end = new Date(f.endTime).getTime();
       const start = new Date(f.startTime).getTime();
@@ -3068,7 +3072,7 @@ async function renderFundList() {
       ringText = now >= end ? 'รอผล' : fmtFundCountdown(end - now);
     }
     const statusLine = isDone
-      ? (isWin ? '<span style="color:#22c55e;">ชนะ +$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>' : '<span style="color:#ef4444;">ขาดทุน -$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>')
+      ? '<span style="color:#22c55e;">+$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>'
       : 'กำไร: ' + f.percent + '%';
     return `<div class="fund-item">
       <div class="fund-ring-wrap">
