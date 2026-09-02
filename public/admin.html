@@ -135,6 +135,7 @@ body { background: #050505; color: #e5e5e5; margin: 0; padding: 0; overflow-x: h
 .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 .badge-failed { background: rgba(100, 100, 100, 0.2); color: #888; }
 .note-badge { display: inline-block; margin-top: 2px; background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); font-size: 11px; padding: 1px 8px; border-radius: 10px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.uid-badge { display: inline-block; margin-top: 2px; background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); font-family: ui-monospace, monospace; font-size: 11px; padding: 1px 7px; border-radius: 8px; white-space: nowrap; vertical-align: middle; }
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; border-bottom: 1px solid #1a1a1a; }
 td { padding: 12px 16px; border-bottom: 1px solid #1a1a1a; font-size: 14px; color: #ccc; }
@@ -235,6 +236,49 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 /* Sound alert indicator: ไอคอนกะพริบขณะเสียงแจ้งเตือนกำลังดัง */
 @keyframes soundAlertBlink { 0%,100% { opacity:1; color:#facc15; } 50% { opacity:.35; } }
 #adminSoundBtn.sound-alert-active #adminSoundIcon { animation: soundAlertBlink .8s infinite; color:#facc15; }
+
+/* ===== Mobile responsive (≤768px) — drawer sidebar, compact topbar, scrollable tables, fullscreen chat ===== */
+.sidebar-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:45; }
+.sidebar-backdrop.show { display:block; }
+.chat-back-btn { display:none; background:#111; border:1px solid #333; color:#e5e5e5; border-radius:10px; width:40px; height:40px; min-width:40px; align-items:center; justify-content:center; cursor:pointer; font-size:15px; }
+html[data-theme="light"] .sidebar-backdrop { background:rgba(0,0,0,.4); }
+html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border-color:#d4d4cc; }
+@media (max-width: 768px) {
+  .sidebar { z-index:60; width:min(80vw,280px); box-shadow:0 0 40px rgba(0,0,0,.6); }
+  .header { padding:10px 12px; flex-wrap:wrap; row-gap:8px; }
+  .header .flex.items-center.gap-4 { gap:8px !important; flex-wrap:wrap; }
+  #pageTitle { font-size:16px !important; }
+  .header .text-right { display:none; }
+  .theme-switch-btn { width:38px; height:38px; min-width:38px; }
+  .lang-switcher { margin-bottom:0; }
+  .tab-content.p-6 { padding:12px !important; }
+  #userSearch { width:140px !important; }
+  .tab-content > .flex.justify-between { flex-wrap:wrap; gap:8px; }
+  .grid-4 { grid-template-columns:repeat(2,1fr); gap:10px; }
+  .stat-card { padding:14px; }
+  .stat-card .text-3xl { font-size:22px; }
+  .card { padding:14px; border-radius:12px; }
+  .overflow-x-auto { -webkit-overflow-scrolling:touch; }
+  table { min-width:640px; }
+  th { padding:10px; font-size:11px; }
+  td { padding:10px; font-size:13px; }
+  .action-btns button, .action-btns .btn-primary, .action-btns .btn-danger, .action-btns .btn-success, .action-btns .btn-warning { min-height:40px; padding:8px 12px; }
+  .modal { padding:8px; }
+  .modal-content, .modal-content.wide, .modal-content.xl { width:95vw; max-width:95vw; padding:16px; border-radius:14px; }
+  .modal-content .btn-primary, .modal-content .btn-danger, .modal-content .btn-success, .modal-content .btn-secondary { min-height:44px; }
+  .kyc-img-grid { grid-template-columns:repeat(2,1fr); }
+  .trade-profit-input { grid-template-columns:1fr; }
+  /* Chat: แสดงลิสต์ก่อน เลือกแล้วหน้าต่างแชทเต็มจอ มีปุ่มย้อนกลับ */
+  #chatGrid { display:block !important; height:auto !important; }
+  #chatGrid .chat-list-card { height:calc(100vh - 130px); }
+  #chatGrid .chat-window-card { display:none; }
+  #chatGrid.chat-open .chat-list-card { display:none; }
+  #chatGrid.chat-open .chat-window-card { display:flex; position:fixed; inset:0; z-index:70; border-radius:0; border:none; height:100%; margin:0; }
+  .chat-back-btn { display:inline-flex; }
+  .chat-user-item { min-height:56px; }
+  .toast { left:12px; right:12px; top:12px; text-align:center; }
+}
+@media (max-width: 380px) { .grid-4 { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -295,6 +339,7 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 </button>
 </div>
 </div>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
 <div class="main-content">
 <div class="header">
@@ -412,7 +457,7 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 <h2 class="text-2xl font-bold text-white" id="usersTitle" data-i18n="users">จัดการสมาชิก</h2>
 <input type="text" placeholder="ค้นหา..." data-i18n-ph="searchPh" id="userSearch" onkeyup="searchUsers()" style="width: 250px !important; background: #111 !important;"/>
 </div>
-<div class="card"><div class="overflow-x-auto"><table><thead><tr><th data-i18n="thMember">สมาชิก</th><th data-i18n="thPhone">เบอร์โทร</th><th data-i18n="thBalance">ยอดเงิน</th><th>VIP</th><th>KYC</th><th data-i18n="thStatus">สถานะ</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
+<div class="card"><div class="overflow-x-auto"><table><thead><tr><th data-i18n="thMember">สมาชิก</th><th data-i18n="thPhone">เบอร์โทร</th><th>ID</th><th data-i18n="thBalance">ยอดเงิน</th><th>VIP</th><th>KYC</th><th data-i18n="thStatus">สถานะ</th><th data-i18n="thManage">จัดการ</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>
 </div>
 
 <!-- DEPOSITS -->
@@ -476,11 +521,11 @@ html[data-theme="light"] .theme-switch-btn { background:#fff; color:#1f2937; bor
 
 <!-- CHAT -->
 <div class="tab-content p-6" id="tab-chat">
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" style="height: calc(100vh - 140px);">
-<div class="card lg:col-span-1 overflow-hidden flex flex-col"><h3 class="font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-comments text-yellow-400"></i><span data-i18n="chatListCard"> รายชื่อลูกค้า</span><button class="ml-auto text-gray-400 hover:text-yellow-400 transition text-base" title="รีเฟรช" onclick="loadChatUsers()">⟳</button></h3><div class="flex-1 overflow-y-auto space-y-2" id="chatUserList"></div></div>
-<div class="card lg:col-span-2 overflow-hidden flex flex-col">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="chatGrid" style="height: calc(100vh - 140px);">
+<div class="card chat-list-card lg:col-span-1 overflow-hidden flex flex-col"><h3 class="font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-comments text-yellow-400"></i><span data-i18n="chatListCard"> รายชื่อลูกค้า</span><button class="ml-auto text-gray-400 hover:text-yellow-400 transition text-base" title="รีเฟรช" onclick="loadChatUsers()">⟳</button></h3><div class="flex-1 overflow-y-auto space-y-2" id="chatUserList"></div></div>
+<div class="card chat-window-card lg:col-span-2 overflow-hidden flex flex-col">
 <div class="flex justify-between items-center mb-4 pb-4 border-b border-[#1a1a1a]">
-<div class="flex items-center gap-3"><div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-lg" id="chatUserAvatar">U</div><div><div class="font-bold text-white" id="chatUserName">เลือกลูกค้า</div><div class="text-xs text-gray-500" id="chatUserPhone">-</div></div></div>
+<div class="flex items-center gap-3"><button type="button" class="chat-back-btn" onclick="backToChatList()" aria-label="ย้อนกลับ" title="ย้อนกลับ"><i class="fas fa-arrow-left"></i></button><div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-lg" id="chatUserAvatar">U</div><div><div class="font-bold text-white" id="chatUserName">เลือกลูกค้า</div><div class="text-xs text-gray-500" id="chatUserPhone">-</div></div></div>
 <div class="flex items-center gap-2">
 <button class="text-gray-400 hover:text-yellow-400 transition text-lg" title="รีเฟรช" onclick="loadAdminChatMessages(true)">⟳</button>
 <button class="btn-danger text-sm" onclick="deleteUserChatHistory()" id="deleteChatBtn" style="display:none;"><i class="fas fa-trash"></i> ลบแชท</button>
@@ -683,6 +728,7 @@ let editingUserId = null;
 let adminLang = localStorage.getItem('bg_admin_lang') || 'th';
 let lastCounts = { deposits: 0, withdraws: 0, trades: 0, kyc: 0, chat: 0 };
 let autoRefreshInterval = null;
+let alertPollInterval = null; // timer 10s สำหรับเช็ค pending เบาๆ เพื่อให้เสียงแจ้งเตือนดังเร็วขึ้น
 let pendingNotifications = { deposits: false, withdraws: false, trades: false, kyc: false, chat: false };
 let logoImages = { 1: null, 2: null };
 
@@ -863,6 +909,19 @@ async function adminAction(btn, fn, okMsg) {
   try { await fn(); if (okMsg) showToast(okMsg); }
   catch (e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่', 'alert'); }
   finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
+}
+
+// Optimistic UI helper: อัปเดต row ในตารางทันที (เปลี่ยน badge สถานะ + ปิดปุ่มกันซ้ำ)
+// คืน { row, revert } — ถ้า API fail ให้เรียก revert() ซึ่งจะ reload list กลับสภาพจริง
+function markRowHandled(btn, newStatus, reloadFn) {
+  const row = btn && btn.closest ? btn.closest('tr') : null;
+  if (!row) return { row: null, revert: reloadFn || function(){} };
+  row.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
+  const pendingBadge = row.querySelector('.badge.badge-pending');
+  if (pendingBadge) pendingBadge.outerHTML = `<span class="badge badge-${newStatus}">${newStatus}</span>`;
+  const actionCell = row.querySelector('.action-btns');
+  if (actionCell) actionCell.innerHTML = '<span class="text-xs text-gray-500">✓ บันทึกแล้ว</span>';
+  return { row: row, revert: reloadFn || function(){} };
 }
 
 function playNotificationSound() {
@@ -1161,6 +1220,7 @@ async function confirmAdminLogout(){
   finally {
     isAdminLoggedIn=false; currentAdmin=null;
     if(autoRefreshInterval) clearInterval(autoRefreshInterval);
+    if(alertPollInterval) { clearInterval(alertPollInterval); alertPollInterval = null; }
     window.location.reload();
   }
 }
@@ -1213,6 +1273,16 @@ function applyAdminRoleRestrictions() {
 
 function escNote(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
+// Badge เล็กแสดงรหัสสมาชิก 5 หลัก (user_code) — ใช้ทุกเมนูที่มีข้อมูลสมาชิก
+function uidBadge(code) {
+  const c = String(code || '').trim();
+  return c ? `<span class="uid-badge">ID ${c}</span>` : '';
+}
+// ดึง user_code: ใช้จาก row ก่อน (API แนบมาให้) ถ้าไม่มีค่อย fallback ไปที่ object user
+function userCodeOf(row, user) {
+  return (row && (row.user_code || row.userCode)) || (user && (user.user_code || user.userCode)) || '';
+}
+
 // ปุ่ม ⟳ บน topbar: โหลดข้อมูลของแท็บที่เปิดอยู่ใหม่ + อัปเดต badge (ไม่ reload ทั้งหน้า)
 async function refreshAdminData() {
   const icon = document.getElementById('adminRefreshIcon');
@@ -1263,9 +1333,28 @@ function showAdminTab(tabId, element) {
   if (tabId === 'admins') loadAdmins(); 
   if (tabId === 'p2p') loadP2PSettings(); 
   if (tabId === 'settings') { loadSettings(); loadPackages(); loadAutoTradeUserList(); loadHeroImages(); }
+  closeSidebarDrawer(); // มือถือ: เลือกเมนูแล้ว drawer ปิดอัตโนมัติ
 }
 
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  const open = sb.classList.toggle('open');
+  if (bd) bd.classList.toggle('show', open);
+  document.body.style.overflow = (open && window.innerWidth <= 1024) ? 'hidden' : '';
+}
+function closeSidebarDrawer() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  if (sb) sb.classList.remove('open');
+  if (bd) bd.classList.remove('show');
+  document.body.style.overflow = '';
+}
+// มือถือ: กลับจากหน้าต่างแชทเต็มจอไปที่ลิสต์ลูกค้า
+function backToChatList() {
+  const g = document.getElementById('chatGrid');
+  if (g) g.classList.remove('chat-open');
+}
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 function openModal(id) { document.getElementById(id).classList.add('active'); }
 
@@ -1307,10 +1396,28 @@ function startAutoRefresh() {
       if (tabId === 'trades') loadTrades(); 
       if (tabId === 'fund') loadFundInvestments();
       if (tabId === 'kyc') loadKycs();
-      // แชทมีตัว poll เฉพาะทาง (3.5s สำหรับหน้าต่างสนทนา / 20s สำหรับรายชื่อ)
+      // แชทมีตัว poll เฉพาะทาง (2.5s สำหรับหน้าต่างสนทนา / 20s สำหรับรายชื่อ)
       // ไม่ต้อง reload ซ้ำในรอบ 30s — กัน re-render ทั้งกระดานและ scroll กระตุก
     }
   }, 30000);
+  // Light alert poll ทุก 10s: ดึงเฉพาะ 4 list ที่ใช้ตัดสินเสียงแจ้งเตือน (ฝาก/ถอน/เทรด/แชท)
+  // = 24 req/นาที อยู่ในงบ rate limit — เสียงดังเร็วขึ้นโดยไม่รอ full refresh 30s
+  if (alertPollInterval) clearInterval(alertPollInterval);
+  alertPollInterval = setInterval(() => {
+    if (document.hidden) return;
+    pollAlertsLight();
+  }, 10000);
+}
+
+// Poll เบาๆ เฉพาะข้อมูลที่จำเป็นสำหรับเสียงแจ้งเตือน (ไม่ re-render UI, ไม่แตะ badge ตัวเลข)
+async function pollAlertsLight() {
+  try {
+    const [deps, wds, trs, chs] = await Promise.all([DB.getDeposits(), DB.getWithdraws(), DB.getTrades(), DB.getChats()]);
+    handleDepositAlerts(deps || []);
+    handleWithdrawAlerts(wds || []);
+    handleTradeAlerts(trs || []);
+    handleChatAlerts(chs || []);
+  } catch (e) { console.warn('alert poll', e); }
 }
 
 async function processAutoTrades() {
@@ -1424,8 +1531,8 @@ async function loadUsers() {
     const kycClass = kyc === 'verified' ? 'approved' : kyc === 'pending' ? 'pending' : 'rejected';
     const status = u.status || 'active';
     const statusClass = status === 'active' ? 'approved' : status === 'suspended' ? 'pending' : 'rejected';
-    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div>${u.note ? `<div class="note-badge" title="โน้ตของแอดมิน (สมาชิกไม่เห็น)">📝 ${escNote(u.note)}</div>` : ''}<div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
-  }).join('') || '<tr><td colspan="7" class="text-center text-gray-500 py-8">ไม่มีสมาชิก</td></tr>';
+    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div>${u.note ? `<div class="note-badge" title="โน้ตของแอดมิน (สมาชิกไม่เห็น)">📝 ${escNote(u.note)}</div>` : ''}<div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-mono text-xs text-gray-400">${u.user_code || u.userCode || ''}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
+  }).join('') || '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่มีสมาชิก</td></tr>';
 }
 
 async function searchUsers() {
@@ -1436,8 +1543,8 @@ async function searchUsers() {
     const kycClass = kyc === 'verified' ? 'approved' : kyc === 'pending' ? 'pending' : 'rejected';
     const status = u.status || 'active';
     const statusClass = status === 'active' ? 'approved' : status === 'suspended' ? 'pending' : 'rejected';
-    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div>${u.note ? `<div class="note-badge" title="โน้ตของแอดมิน (สมาชิกไม่เห็น)">📝 ${escNote(u.note)}</div>` : ''}<div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
-  }).join('') || '<tr><td colspan="7" class="text-center text-gray-500 py-8">ไม่พบสมาชิก</td></tr>';
+    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${(u.name || 'U').charAt(0)}</div><div><div class="font-bold text-white">${u.name || '-'}</div>${u.note ? `<div class="note-badge" title="โน้ตของแอดมิน (สมาชิกไม่เห็น)">📝 ${escNote(u.note)}</div>` : ''}<div class="text-xs text-gray-500">${u.phone}</div></div></div></td><td class="text-gray-300">${u.phone || '-'}</td><td class="font-mono text-xs text-gray-400">${u.user_code || u.userCode || ''}</td><td class="font-bold text-white">$${(parseFloat(u.balance) || 0).toFixed(2)}</td><td><span class="badge badge-approved">VIP ${u.vip || 1}</span></td><td><span class="badge badge-${kycClass}">${kyc}</span></td><td><span class="badge badge-${statusClass}">${status}</span></td><td><div class="action-btns"><button class="btn-info bg-blue-600 text-white px-3 py-1 rounded-lg text-xs" onclick="viewUser('${u.id}')"><i class="fas fa-eye"></i></button><button class="btn-warning px-3 py-1 rounded-lg text-xs" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button><button class="px-3 py-1 rounded-lg text-xs" style="background:#22c55e;color:#000;" title="Auto Trade" onclick="openUserTradeSetting('${u.id}')"><i class="fas fa-bullseye"></i></button><button class="btn-danger px-3 py-1 rounded-lg text-xs" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
+  }).join('') || '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่พบสมาชิก</td></tr>';
 }
 
 async function viewUser(userId) {
@@ -1547,7 +1654,7 @@ async function loadDeposits() {
     const slipUrl = d.slip_url || d.slipUrl || '';
     const hasSlip = slipUrl && (slipUrl.startsWith('data:') || slipUrl.startsWith('http')) ? true : false;
     const slipPreview = hasSlip ? `<img src="${slipUrl}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid #eab308;" onclick="viewDepositSlip('${slipUrl}')" onerror="this.onerror=null;this.src='';this.alt='ไม่สามารถโหลดรูป';this.style.display='none';this.parentNode.innerHTML='<span class=\'text-xs text-gray-500\'>ไม่มีรูป</span>';">` : '<span class="text-xs text-gray-500">ไม่มีสลิป</span>';
-    return `<tr><td class="font-mono text-xs text-gray-400">${d.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td><span class="badge badge-info bg-blue-500/20 text-blue-400">${d.type || 'deposit'}</span></td><td class="font-bold text-green-400">+${parseFloat(d.amount).toFixed(2)} USDT</td><td>${slipPreview}</td><td><span class="badge badge-${d.status}">${d.status}</span></td><td class="text-xs text-gray-500">${new Date(d.created_at || d.createdAt).toLocaleString()}</td><td><div class="action-btns">${d.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveDeposit('${d.id}')"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectDeposit('${d.id}')"><i class="fas fa-times"></i></button>` : ''}<button class="btn-warning text-xs" onclick="editDeposit('${d.id}')"><i class="fas fa-edit"></i></button></div></td></tr>`;
+    return `<tr><td class="font-mono text-xs text-gray-400">${d.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'} ${uidBadge(userCodeOf(d, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td><span class="badge badge-info bg-blue-500/20 text-blue-400">${d.type || 'deposit'}</span></td><td class="font-bold text-green-400">+${parseFloat(d.amount).toFixed(2)} USDT</td><td>${slipPreview}</td><td><span class="badge badge-${d.status}">${d.status}</span></td><td class="text-xs text-gray-500">${new Date(d.created_at || d.createdAt).toLocaleString()}</td><td><div class="action-btns">${d.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveDeposit('${d.id}', this)"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectDeposit('${d.id}', this)"><i class="fas fa-times"></i></button>` : ''}<button class="btn-warning text-xs" onclick="editDeposit('${d.id}')"><i class="fas fa-edit"></i></button></div></td></tr>`;
   }).join('') || '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่มีรายการ</td></tr>';
 }
 
@@ -1562,14 +1669,16 @@ function viewDepositSlip(url) {
   openModal('depositSlipModal');
 }
 
-async function approveDeposit(id) {
-  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการฝากสำเร็จ','success'); loadDeposits(); updateBadges(); }
-  catch(e) { showToast('ไม่สามารถอนุมัติรายการได้','alert'); }
+async function approveDeposit(id, btn) {
+  const opt = markRowHandled(btn, 'approved', loadDeposits); // optimistic: เปลี่ยน row ทันที
+  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการฝากสำเร็จ','success'); updateBadges(); }
+  catch(e) { opt.revert(); showToast('ไม่สามารถอนุมัติรายการได้','alert'); }
 }
 
-async function rejectDeposit(id) {
-  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); showToast('ปฏิเสธการฝาก','alert'); loadDeposits(); updateBadges(); }
-  catch(e) { showToast('ไม่สามารถปฏิเสธรายการได้','alert'); }
+async function rejectDeposit(id, btn) {
+  const opt = markRowHandled(btn, 'rejected', loadDeposits);
+  try { await BinanceGoldAPI.fetch('/api/admin/deposits/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); showToast('ปฏิเสธการฝาก','alert'); updateBadges(); }
+  catch(e) { opt.revert(); showToast('ไม่สามารถปฏิเสธรายการได้','alert'); }
 }
 
 async function editDeposit(id) { 
@@ -1607,18 +1716,20 @@ async function loadWithdraws() {
         info = `<div class="text-white font-bold text-xs">${b.bank}</div><div class="text-xs text-gray-500">${b.account}</div><div class="text-xs text-gray-400">${b.accountName || ''}</div>`; 
       } else if (w.address) info = `<span class="font-mono text-xs text-blue-400">${w.address.substring(0, 20)}...</span>`; 
     } catch(e) { info = w.bank_info || w.bankInfo || w.address || '-'; }
-    return `<tr><td class="font-mono text-xs text-gray-400">${w.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td><span class="badge badge-${w.type === 'p2p' ? 'pending' : 'info'} bg-blue-500/20 text-blue-400">${w.type || 'withdraw'}</span></td><td class="font-bold text-red-400">-${parseFloat(w.amount).toFixed(2)} USDT</td><td class="text-xs">${info}</td><td><span class="badge badge-${w.status}">${w.status}</span></td><td class="text-xs text-gray-500">${new Date(w.created_at || w.createdAt).toLocaleString()}</td><td><div class="action-btns">${w.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveWithdraw('${w.id}')"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectWithdraw('${w.id}')"><i class="fas fa-times"></i></button>` : ''}<button class="btn-warning text-xs" onclick="editWithdraw('${w.id}')"><i class="fas fa-edit"></i></button></div></td></tr>`;
+    return `<tr><td class="font-mono text-xs text-gray-400">${w.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'} ${uidBadge(userCodeOf(w, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td><span class="badge badge-${w.type === 'p2p' ? 'pending' : 'info'} bg-blue-500/20 text-blue-400">${w.type || 'withdraw'}</span></td><td class="font-bold text-red-400">-${parseFloat(w.amount).toFixed(2)} USDT</td><td class="text-xs">${info}</td><td><span class="badge badge-${w.status}">${w.status}</span></td><td class="text-xs text-gray-500">${new Date(w.created_at || w.createdAt).toLocaleString()}</td><td><div class="action-btns">${w.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveWithdraw('${w.id}', this)"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectWithdraw('${w.id}', this)"><i class="fas fa-times"></i></button>` : ''}<button class="btn-warning text-xs" onclick="editWithdraw('${w.id}')"><i class="fas fa-edit"></i></button></div></td></tr>`;
   }).join('') || '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่มีรายการ</td></tr>';
 }
 
-async function approveWithdraw(id) {
-  try { await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการถอนสำเร็จ','success'); loadWithdraws(); updateBadges(); }
-  catch(e) { showToast('ไม่สามารถอนุมัติรายการได้','alert'); }
+async function approveWithdraw(id, btn) {
+  const opt = markRowHandled(btn, 'approved', loadWithdraws);
+  try { await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/approve',{method:'POST',body:{}}); showToast('อนุมัติการถอนสำเร็จ','success'); updateBadges(); }
+  catch(e) { opt.revert(); showToast('ไม่สามารถอนุมัติรายการได้','alert'); }
 }
 
-async function rejectWithdraw(id) {
-  try { const out=await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); if(out.user){} showToast('ปฏิเสธการถอน - คืนเงินแล้ว','alert'); loadWithdraws(); updateBadges(); }
-  catch(e) { showToast('ไม่สามารถปฏิเสธรายการได้','alert'); }
+async function rejectWithdraw(id, btn) {
+  const opt = markRowHandled(btn, 'rejected', loadWithdraws);
+  try { const out=await BinanceGoldAPI.fetch('/api/admin/withdraws/'+encodeURIComponent(id)+'/reject',{method:'POST',body:{}}); if(out.user){} showToast('ปฏิเสธการถอน - คืนเงินแล้ว','alert'); updateBadges(); }
+  catch(e) { opt.revert(); showToast('ไม่สามารถปฏิเสธรายการได้','alert'); }
 }
 
 async function editWithdraw(id) { 
@@ -1677,25 +1788,34 @@ async function loadTrades() {
     }
     const winStyle = preset && t.result === 'win' ? ' style="box-shadow:0 0 0 2px #22c55e;"' : '';
     const loseStyle = preset && t.result === 'lose' ? ' style="box-shadow:0 0 0 2px #ef4444;"' : '';
-    return `<tr><td class="font-mono text-xs text-gray-400">${t.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="font-bold text-white">${t.symbol.replace('USDT', '/USDT')}</td><td><span class="badge badge-${t.type === 'buy' ? 'approved' : 'rejected'}">${t.type === 'buy' ? tAdmin('buyBadge') : tAdmin('sellBadge')}</span></td><td class="text-white">$${parseFloat(t.amount).toFixed(2)}</td><td>${pkgText}</td><td>${remainTxt}</td><td class="${resultClass} font-bold">${resultText}</td><td><div class="action-btns">${isPending ? `<button class="btn-success text-xs"${winStyle} onclick="setTradeResultNow('${t.id}', 'win')"><i class="fas fa-trophy"></i> ${tAdmin('winTxt')}</button><button class="btn-danger text-xs"${loseStyle} onclick="setTradeResultNow('${t.id}', 'lose')"><i class="fas fa-times-circle"></i> ${tAdmin('loseTxt')}</button>` : `<span class="text-xs text-gray-500">${tAdmin('statusDone')}</span>`}</div></td></tr>`;
+    return `<tr><td class="font-mono text-xs text-gray-400">${t.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : 'Unknown'} ${uidBadge(userCodeOf(t, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="font-bold text-white">${t.symbol.replace('USDT', '/USDT')}</td><td><span class="badge badge-${t.type === 'buy' ? 'approved' : 'rejected'}">${t.type === 'buy' ? tAdmin('buyBadge') : tAdmin('sellBadge')}</span></td><td class="text-white">$${parseFloat(t.amount).toFixed(2)}</td><td>${pkgText}</td><td>${remainTxt}</td><td class="${resultClass} font-bold">${resultText}</td><td><div class="action-btns">${isPending ? `<button class="btn-success text-xs"${winStyle} onclick="setTradeResultNow('${t.id}', 'win', this)"><i class="fas fa-trophy"></i> ${tAdmin('winTxt')}</button><button class="btn-danger text-xs"${loseStyle} onclick="setTradeResultNow('${t.id}', 'lose', this)"><i class="fas fa-times-circle"></i> ${tAdmin('loseTxt')}</button>` : `<span class="text-xs text-gray-500">${tAdmin('statusDone')}</span>`}</div></td></tr>`;
   }).join('') || `<tr><td colspan="9" class="text-center text-gray-500 py-8">${tAdmin('noData')}</td></tr>`;
 }
 
 // ตั้งผลชนะ/แพ้ล่วงหน้า — เว็บจะแสดงผลอัตโนมัติเมื่อครบเวลาที่กำหนด (ถ้าครบแล้ว ปิดผลทันที)
-async function setTradeResultNow(tradeId, result) {
+// Optimistic: อัปเดต row ทันที (ปิดปุ่ม + แสดงผลที่ตั้งไว้) แล้วค่อยยิง API เบื้องหลัง; fail ค่อย reload กลับ
+async function setTradeResultNow(tradeId, result, btn) {
+  const row = btn && btn.closest ? btn.closest('tr') : null;
+  if (row) {
+    row.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.6'; });
+    if (btn) btn.style.boxShadow = result === 'win' ? '0 0 0 2px #22c55e' : '0 0 0 2px #ef4444';
+    const resCell = row.cells[7]; // คอลัมน์ "ผล"
+    if (resCell) { resCell.className = 'text-yellow-400 font-bold'; resCell.textContent = tAdmin('statusRunning') + ' → ' + (result === 'win' ? tAdmin('winTxt') : tAdmin('loseTxt')); }
+  }
   try {
   const tr = (await DB.getTrades()).find(x => x.id === tradeId);
-  if (!tr || tr.status !== 'pending') return;
+  if (!tr || tr.status !== 'pending') { loadTrades(); return; }
   await DB.updateTrade(tradeId, { result: result, resultSetAt: new Date().toISOString() });
   const end = tr.endTime ? new Date(tr.endTime).getTime() : 0;
   if (Date.now() >= end) {
     await processDueTradeSettlements();
     showToast(tAdmin('resSet') + ': ' + (result === 'win' ? tAdmin('winTxt') : tAdmin('loseTxt')) + ' — ' + tAdmin('resSettledNow'), result === 'win' ? 'success' : 'alert');
+    loadTrades(); loadDashboard();
   } else {
     showToast(tAdmin('resPreset') + ' "' + (result === 'win' ? tAdmin('winTxt') : tAdmin('loseTxt')) + '" — ' + tAdmin('resAutoAt'), 'success');
   }
-  loadTrades(); loadDashboard(); updateBadges();
-  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  updateBadges();
+  } catch(e) { console.error(e); loadTrades(); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== KYC ====================
@@ -1711,7 +1831,7 @@ async function loadKycs() {
     const selfie = k.selfie_image_url || k.selfieImageUrl;
     const hasDocs = front || back || selfie;
     const docCount = (front ? 1 : 0) + (back ? 1 : 0) + (selfie ? 1 : 0);
-    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${user ? (user.name || 'U').charAt(0) : '?'}</div><div><div class="font-bold text-white">${user ? user.name : 'Unknown'}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></div></div></td><td class="text-white">${k.fullName || k.full_name}</td><td class="font-mono text-xs text-gray-400">${k.idNumber || k.id_number}</td><td><span class="badge badge-${k.status}">${k.status}</span></td><td>${hasDocs ? `<button class="btn-secondary text-xs" onclick="viewKycDetail('${k.id}')"><i class="fas fa-images"></i> ดูเอกสาร (${docCount})</button>` : '<span class="text-xs text-gray-500">-</span>'}</td><td><div class="action-btns">${k.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveKyc('${k.id}')"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectKyc('${k.id}')"><i class="fas fa-times"></i></button>` : ''}</div></td></tr>`;
+    return `<tr><td><div class="flex items-center gap-3"><div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${user ? (user.name || 'U').charAt(0) : '?'}</div><div><div class="font-bold text-white">${user ? user.name : 'Unknown'} ${uidBadge(userCodeOf(k, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></div></div></td><td class="text-white">${k.fullName || k.full_name}</td><td class="font-mono text-xs text-gray-400">${k.idNumber || k.id_number}</td><td><span class="badge badge-${k.status}">${k.status}</span></td><td>${hasDocs ? `<button class="btn-secondary text-xs" onclick="viewKycDetail('${k.id}')"><i class="fas fa-images"></i> ดูเอกสาร (${docCount})</button>` : '<span class="text-xs text-gray-500">-</span>'}</td><td><div class="action-btns">${k.status === 'pending' ? `<button class="btn-success text-xs" onclick="approveKyc('${k.id}', this)"><i class="fas fa-check"></i></button><button class="btn-danger text-xs" onclick="rejectKyc('${k.id}', this)"><i class="fas fa-times"></i></button>` : ''}</div></td></tr>`;
   }).join('') || '<tr><td colspan="6" class="text-center text-gray-500 py-8">ไม่มีรายการ</td></tr>';
 }
 
@@ -1744,24 +1864,26 @@ function showImagePreview(url) {
   openModal('imagePreviewModal');
 }
 
-async function approveKyc(id) { 
+async function approveKyc(id, btn) {
+  const opt = markRowHandled(btn, 'approved', loadKycs); // optimistic: เปลี่ยน row ทันที
   try {
   const kyc = (await DB.getKycs()).find(k => k.id === id); 
-  if (!kyc) return; 
+  if (!kyc) { loadKycs(); return; } 
   await DB.updateKyc(id, { status: 'approved' }); 
   await DB.updateUser(kyc.user_id || kyc.userId, { kycStatus: 'verified', kyc_status: 'verified' });
-  showToast('อนุมัติ KYC สำเร็จ', 'success'); loadKycs();
-  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  showToast('อนุมัติ KYC สำเร็จ', 'success');
+  } catch(e) { opt.revert(); console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
-async function rejectKyc(id) { 
+async function rejectKyc(id, btn) { 
+  const opt = markRowHandled(btn, 'rejected', loadKycs);
   try {
   const kyc = (await DB.getKycs()).find(k => k.id === id); 
-  if (!kyc) return; 
+  if (!kyc) { loadKycs(); return; } 
   await DB.updateKyc(id, { status: 'rejected' }); 
   await DB.updateUser(kyc.user_id || kyc.userId, { kycStatus: 'rejected', kyc_status: 'rejected' });
-  showToast('ปฏิเสธ KYC', 'alert'); loadKycs();
-  } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  showToast('ปฏิเสธ KYC', 'alert');
+  } catch(e) { opt.revert(); console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
 // ==================== CHAT ====================
@@ -1776,13 +1898,13 @@ async function loadChatUsers() {
     } 
   });
   chatUsers.sort((a, b) => new Date(b.lastChat.created_at || b.lastChat.createdAt) - new Date(a.lastChat.created_at || a.lastChat.createdAt));
-  document.getElementById('chatUserList').innerHTML = chatUsers.map(c => `<div class="chat-user-item ${c.user.id === currentChatUserId ? 'active' : ''}" onclick="selectChatUser('${c.user.id}')"><div class="chat-user-avatar">${(c.user.name || 'U').charAt(0)}</div><div class="flex-1" style="min-width:0;"><div class="font-bold text-sm text-white" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.user.name}</div><div class="text-xs text-gray-500" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.lastChat.type === 'image' ? '[รูปภาพ]' : c.lastChat.message.substring(0, 30)}</div></div>${c.unread > 0 ? `<span class="badge-count">${c.unread}</span>` : `<span class="text-xs text-gray-500">${new Date(c.lastChat.created_at || c.lastChat.createdAt).toLocaleTimeString()}</span>`}</div>`).join('') || '<div class="text-center text-gray-500 py-8">ยังไม่มีข้อความ</div>';
-  if (chatUsers.length > 0 && !currentChatUserId) selectChatUser(chatUsers[0].user.id);
+  document.getElementById('chatUserList').innerHTML = chatUsers.map(c => `<div class="chat-user-item ${c.user.id === currentChatUserId ? 'active' : ''}" onclick="selectChatUser('${c.user.id}')"><div class="chat-user-avatar">${(c.user.name || 'U').charAt(0)}</div><div class="flex-1" style="min-width:0;"><div class="font-bold text-sm text-white" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.user.name} ${uidBadge(userCodeOf(c.lastChat, c.user))}</div><div class="text-xs text-gray-500" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.lastChat.type === 'image' ? '[รูปภาพ]' : c.lastChat.message.substring(0, 30)}</div></div>${c.unread > 0 ? `<span class="badge-count">${c.unread}</span>` : `<span class="text-xs text-gray-500">${new Date(c.lastChat.created_at || c.lastChat.createdAt).toLocaleTimeString()}</span>`}</div>`).join('') || '<div class="text-center text-gray-500 py-8">ยังไม่มีข้อความ</div>';
+  if (chatUsers.length > 0 && !currentChatUserId && window.innerWidth > 768) selectChatUser(chatUsers[0].user.id); // มือถือไม่ auto-open ให้เลือกจากลิสต์ก่อน
 }
 
 // ---- Chat polling state ----
 // While the chat tab is open: the conversation window polls ONLY the selected
-// thread every 3.5s using the ?since= cursor (append-only, no full re-render),
+// thread every 2.5s using the ?since= cursor (append-only, no full re-render),
 // and the customer list refreshes lightly every 20s so new-message badges
 // appear without a manual reload. Both stop when leaving the tab and skip
 // while the browser tab is hidden — well under the 1500 req/15min rate limit.
@@ -1834,7 +1956,7 @@ async function pollAdminChatNew() {
 
 function startChatPolling() {
   stopChatPolling();
-  adminChatMsgTimer = setInterval(function () { if (!document.hidden) pollAdminChatNew(); }, 3500);
+  adminChatMsgTimer = setInterval(function () { if (!document.hidden) pollAdminChatNew(); }, 2500);
   adminChatListTimer = setInterval(function () { if (!document.hidden && chatTabIsActive()) loadChatUsers(); }, 20000);
 }
 
@@ -1849,10 +1971,12 @@ async function selectChatUser(userId) {
   const user = (await DB.getUsers()).find(u => u.id === userId);
   if (user) {
     document.getElementById('chatUserName').textContent = user.name;
-    document.getElementById('chatUserPhone').textContent = user.phone;
+    document.getElementById('chatUserPhone').textContent = user.phone + ((user.user_code || user.userCode) ? '  •  ID ' + (user.user_code || user.userCode) : '');
     document.getElementById('chatUserAvatar').textContent = user.name.charAt(0);
   }
   document.getElementById('deleteChatBtn').style.display = 'inline-flex';
+  const chatGrid = document.getElementById('chatGrid');
+  if (chatGrid) chatGrid.classList.add('chat-open'); // มือถือ: เข้าห้องแชทเต็มจอ
   loadAdminChatMessages();
   loadChatUsers();
 }
@@ -2454,7 +2578,7 @@ async function loadFundInvestments() {
       statusHtml = f.result === 'win' ? '<span class="badge badge-approved">ชนะ</span>' : '<span class="badge badge-rejected">ขาดทุน</span>';
       actions = '<span class="text-xs text-gray-500">เสร็จสิ้น</span>';
     }
-    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">${f.status === 'completed' ? (f.result === 'win' ? '+$' + (parseFloat(f.profit) || 0).toFixed(2) : '-$' + Math.abs(parseFloat(f.profit) || 0).toFixed(2)) : '+' + f.percent + '% ($' + profit.toLocaleString() + '–$' + profitMax.toLocaleString() + ')'}</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
+    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')} ${uidBadge(userCodeOf(f, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">${f.status === 'completed' ? (f.result === 'win' ? '+$' + (parseFloat(f.profit) || 0).toFixed(2) : '-$' + Math.abs(parseFloat(f.profit) || 0).toFixed(2)) : '+' + f.percent + '% ($' + profit.toLocaleString() + '–$' + profitMax.toLocaleString() + ')'}</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
   }).join('');
 }
 
