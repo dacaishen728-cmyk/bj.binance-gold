@@ -13,6 +13,9 @@ function failState(key,windowMs){const n=Date.now(),e=failMap.get(key);if(!e||n-
 function recordFail(key,windowMs){const n=Date.now(),e=failMap.get(key);if(!e||n-e.start>windowMs)failMap.set(key,{start:n,count:1});else e.count++;}
 function clearFails(key){failMap.delete(key);}
 const LOGIN_FAIL_LIMIT=10, LOGIN_FAIL_WINDOW=15*60*1000;
+// Guest chat anti-spam: 30 messages/hour per guest token (in-memory per isolate).
+const guestMsgMap = new Map();
+function guestMsgLimit(token){const n=Date.now(),e=guestMsgMap.get(token);if(!e||n-e.start>3600000){guestMsgMap.set(token,{start:n,count:1});return true;}if(++e.count>30)return false;return true;}
 function tooManyLoginFails(key){const s=failState(key,LOGIN_FAIL_WINDOW);if(s.count<LOGIN_FAIL_LIMIT)return null;return json({ok:false,error:'พยายามเข้าสู่ระบบผิดพลาดหลายครั้งเกินไป กรุณารอประมาณ '+Math.ceil(s.retryAfter/60)+' นาทีแล้วลองใหม่อีกครั้ง'},429,{'Retry-After':String(s.retryAfter)});}
 function secureResponse(resp){ const h=new Headers(resp.headers); h.set('X-Content-Type-Options','nosniff'); h.set('X-Frame-Options','DENY'); h.set('Referrer-Policy','strict-origin-when-cross-origin'); h.set('Permissions-Policy','camera=(), microphone=(), geolocation=()'); return new Response(resp.body,{status:resp.status,statusText:resp.statusText,headers:h}); }
 const DEFAULT_SETTINGS = {
@@ -214,6 +217,20 @@ export default {async fetch(req,env,ctx){
     try{return await api(req,env,u);}catch(e){console.error(e);return json({ok:false,error:e.message||'internal error'},500)}
   }
   if(path==='/'||path==='/index.html'||path==='/admin'||path==='/admin.html'){const target=(path==='/admin'||path==='/admin.html')?'/admin.html':'/index.html';const r=new Request(new URL(target,u),req);const resp=await env.ASSETS.fetch(r);const html=await resp.text();const out=html.includes('/api-db.js')?html:(html.includes('</body>')?html.replace('</body>','<script src="/api-db.js"></script></body>'):html+'<script src="/api-db.js"></script>');return new Response(out,{status:resp.status,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-cache'}})}
+  // Public media files uploaded to R2 via POST /api/media (admin). Keys are
+  // random+immutable, so cache forever. No auth/rate-limit bucket on reads.
+  if(path.startsWith('/media/')){
+    if(!env.MEDIA)return json({ok:false,error:'not found'},404);
+    const key=decodeURIComponent(path.slice(1));
+    const obj=await env.MEDIA.get(key);
+    if(!obj)return json({ok:false,error:'not found'},404);
+    const h=new Headers();
+    obj.writeHttpMetadata(h);
+    if(!h.get('content-type'))h.set('content-type','application/octet-stream');
+    h.set('cache-control','public, max-age=31536000, immutable');
+    h.set('etag',obj.httpEtag);
+    return new Response(obj.body,{headers:h});
+  }
   return env.ASSETS.fetch(req);
 }}
 
@@ -227,7 +244,42 @@ async function api(req,env,u){const p=u.pathname.replace(/^\/api\/?/,'').split('
   if(p[0]==='admin'&&p[1]==='me'&&method==='GET'){const s=await requireSession(req,env,'admin');if(!s)return json({ok:false,error:'unauthorized'},401);const r=await env.DB.prepare('SELECT * FROM admins WHERE id=?').bind(s.actor_id).first();return r?json({ok:true,admin:strip({...parse(r.data,{}),id:r.id,username:r.username})}):json({ok:false,error:'unauthorized'},401)}
   if(p[0]==='admin'&&p[1]==='logout'&&method==='POST'){const c=getCookies(req);for(const name of [sessionCookieName('admin'),'bg_sid']){if(c[name])await env.DB.prepare('DELETE FROM sessions WHERE id_hash=?').bind(await sha256(c[name])).run();}return new Response(JSON.stringify({ok:true}),{status:200,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','set-cookie':clearSessionCookies(req)}})}
   if(p[0]==='settings'&&method==='GET'){const rs=await env.DB.prepare('SELECT key,value FROM settings').all();const o={};for(const r of rs.results){if(String(r.key).startsWith('__'))continue;o[r.key]=parse(r.value,r.value);}return json(o)}
+  // ===== Guest support chat (ไม่ต้องล็อกอิน) =====
+  // Thread เก็บในตาราง chats เดิม โดย user_id = 'guest:<token>' (token สุ่มที่
+  // client เก็บใน localStorage) — แอดมินเห็น/ตอบผ่าน dashboard ปกติ และ guest
+  // อ่าน/เขียนได้เฉพาะ thread ของ token ตัวเองเท่านั้น
+  const GUEST_TOKEN_RE=/^[A-Za-z0-9]{20,80}$/;
+  if(p[0]==='chat'&&p[1]==='guest'){
+    if(method==='GET'){const tk=String(u.searchParams.get('token')||'');if(!GUEST_TOKEN_RE.test(tk))return json({ok:false,error:'invalid token'},400);let rows=await listRecords(env,'chats','guest:'+tk,500);const since=u.searchParams.get('since');if(since){const s=String(since);rows=rows.filter(r=>String(r.created_at||r.createdAt||'')>s)}return json({ok:true,messages:rows})}
+    if(method==='POST'){const b=await body(req);if(badKeys(b))return json({ok:false,error:'invalid field name'},400);let tk=String(b.token||'');const fresh=!GUEST_TOKEN_RE.test(tk);if(fresh)tk=crypto.randomUUID().replaceAll('-','')+crypto.randomUUID().replaceAll('-','').slice(0,16);const msg=b.message==null?'':String(b.message);const type=b.type==='image'?'image':'text';
+      if(!msg)return json({ok:true,token:tk,created:fresh}); // ขอ token ใหม่เฉยๆ
+      if(!guestMsgLimit(tk))return json({ok:false,error:'ส่งข้อความถี่เกินไป กรุณารอสักครู่ (สูงสุด 30 ข้อความ/ชั่วโมง)'},429,{'Retry-After':'3600'});
+      if(type==='image'&&!/^data:image\//.test(msg)&&!/^\/media\//.test(msg))return json({ok:false,error:'invalid image'},400);
+      if(msg.length>2000000)return json({ok:false,error:'ไฟล์รูปใหญ่เกินไป'},413);
+      const t=now(),rid=id('C'),guid='guest:'+tk,data=strip({id:rid,user_id:guid,userId:guid,sender:'user',guest:true,message:msg,type,createdAt:t,created_at:t});await env.DB.prepare('INSERT INTO chats(id,user_id,data,created_at) VALUES(?,?,?,?)').bind(rid,guid,JSON.stringify(data),t).run();return json({ok:true,token:tk,chat:data},201)}
+    return json({ok:false,error:'method not allowed'},405);
+  }
   const [user,admin]=await Promise.all([requireSession(req,env,'user'),requireSession(req,env,'admin')]);
+  // POST /api/media (admin only): raw body + x-file-type header → R2 bucket.
+  // รูปเล็กๆ ยังใช้ base64 ใน settings ได้เหมือนเดิม; endpoint นี้สำหรับไฟล์ใหญ่/วิดีโอ
+  if(p[0]==='media'&&method==='POST'){
+    if(!admin)return json({ok:false,error:'forbidden'},403);
+    if(!env.MEDIA)return json({ok:false,error:'ยังไม่ได้เปิดใช้งานที่เก็บไฟล์ (ยังไม่ได้ผูก R2 bucket — รัน npx wrangler r2 bucket create bg-media แล้ว deploy ใหม่)'},503);
+    const ct=String(req.headers.get('x-file-type')||'').split(';')[0].trim().toLowerCase();
+    const okType=/^image\/[a-z0-9.+-]+$/.test(ct)||['video/mp4','video/webm','video/quicktime'].includes(ct);
+    if(!okType)return json({ok:false,error:'รองรับเฉพาะไฟล์รูปภาพหรือวิดีโอ (mp4 / webm / mov)'},415);
+    const MAX=80*1024*1024;
+    const len=Number(req.headers.get('content-length')||0);
+    if(len>MAX)return json({ok:false,error:'ไฟล์ใหญ่เกิน 80MB'},413);
+    const buf=await req.arrayBuffer();
+    if(!buf.byteLength)return json({ok:false,error:'ไฟล์ว่างเปล่า'},400);
+    if(buf.byteLength>MAX)return json({ok:false,error:'ไฟล์ใหญ่เกิน 80MB'},413);
+    const ext={'video/mp4':'.mp4','video/webm':'.webm','video/quicktime':'.mov','image/jpeg':'.jpg','image/png':'.png','image/gif':'.gif','image/webp':'.webp','image/svg+xml':'.svg','image/avif':'.avif'}[ct]||'';
+    const key='media/'+Date.now().toString(36)+'-'+crypto.randomUUID().replaceAll('-','').slice(0,12)+ext;
+    await env.MEDIA.put(key,buf,{httpMetadata:{contentType:ct}});
+    await audit(env,'admin:'+admin.actor_id,'upload_media',key,{contentType:ct,size:buf.byteLength},req.headers.get('CF-Connecting-IP'));
+    return json({ok:true,url:'/'+key,key:key,contentType:ct,size:buf.byteLength},201);
+  }
   if(p[0]==='settings'&&method==='PUT'){if(!await requireSuperAdmin(req,env))return json({ok:false,error:'เฉพาะผู้ดูแลระบบหลัก (superadmin) เท่านั้นที่แก้ไขการตั้งค่าได้'},403);const b=await body(req);await env.DB.batch(Object.entries(b).map(([k,v])=>env.DB.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').bind(k,JSON.stringify(v))));await audit(env,'admin:'+admin.actor_id,'update_settings','settings',{keys:Object.keys(b)},req.headers.get('CF-Connecting-IP'));const rs2=await env.DB.prepare('SELECT key,value FROM settings').all();const o2={};for(const r of rs2.results){if(String(r.key).startsWith('__'))continue;o2[r.key]=parse(r.value,r.value);}return json(o2)}
   if(p[0]==='users'&&method==='GET'){const q=String(u.searchParams.get('q')||'');const wantAll=u.searchParams.get('all')==='1';if(admin&&(wantAll||q)){const lim=Math.min(Number(u.searchParams.get('limit')||500),5000);let rs=q?await env.DB.prepare("SELECT * FROM users WHERE phone LIKE ? OR id LIKE ? OR json_extract(data,'$.name') LIKE ? ORDER BY created_at DESC LIMIT ?").bind('%'+q+'%','%'+q+'%','%'+q+'%',lim).all():await env.DB.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT ?').bind(lim).all();return json(rs.results.map(userFromRow))}if(user&&!q){const me=await getUser(env,user.actor_id);return me?json([safeUser(me)]):json([])}return json({ok:false,error:'forbidden'},403)}
   if(p[0]==='users'&&p.length===2&&method==='GET'){if(!admin&&(!user||user.actor_id!==p[1]))return json({ok:false,error:'forbidden'},403);const x=await getUser(env,p[1]);return x?json(admin?x:safeUser(x)):json({ok:false,error:'not found'},404)}

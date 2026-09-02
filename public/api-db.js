@@ -20,6 +20,16 @@
     return fetch(path,init).then(function(r){return r.json().catch(function(){return {};}).then(function(data){if(!r.ok){var e=new Error(data.error||('API '+r.status));e.status=r.status;e.data=data;throw e;}return data;});});
   }
   function idKey(prefix){return prefix+'-'+(crypto.randomUUID?crypto.randomUUID():(Date.now()+'-'+Math.random().toString(36).slice(2)));}
+  // อัปโหลดไฟล์สื่อ (รูปใหญ่/วิดีโอ) ขึ้น R2 ผ่าน worker — raw body + header x-file-type
+  // คืน { ok, url, key, contentType, size } ; โยน Error(message ภาษาไทยจาก server) เมื่อล้มเหลว
+  function uploadMedia(file){
+    if(!file) return Promise.reject(new Error('ไม่ได้เลือกไฟล์'));
+    return fetch('/api/media',{method:'POST',credentials:'include',headers:{'x-file-type':file.type||'application/octet-stream'},body:file})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(data){
+        if(!r.ok||!data.ok){var e=new Error(data.error||('อัปโหลดไม่สำเร็จ ('+r.status+')'));e.status=r.status;e.data=data;throw e;}
+        return data;
+      });});
+  }
   // Admin pages need cross-user lists; the worker only returns them when the
   // explicit all=1 flag is present. Member pages never send it, so a browser
   // holding both a member and an admin cookie cannot leak other users' data.
@@ -73,6 +83,9 @@
     getChatsByUser:function(uid,since){var u=userListUrl('/api/chats',uid);if(since)u+=(u.indexOf('?')>=0?'&':'?')+'since='+enc(since);return apiFetch(u).then(mineOnly);},
     createChat:function(c){return apiFetch('/api/chats',{method:'POST',body:c,idempotencyKey:idKey('chat')});},
     deleteChatsByUser:function(userId){return apiFetch('/api/admin/chats?user_id='+enc(userId),{method:'DELETE'});},
+    // Guest support chat (ผู้เยี่ยมชม ไม่ต้องล็อกอิน): token เก็บฝั่ง client
+    guestChatSend:function(payload){return apiFetch('/api/chat/guest',{method:'POST',body:payload});},
+    guestChatList:function(token,since){var u='/api/chat/guest?token='+enc(token);if(since)u+='&since='+enc(since);return apiFetch(u).then(function(r){return r.messages||[];});},
     setChats:function(){return Promise.resolve();},
     getKycs:function(){return apiFetch(listUrl('/api/kycs'));},
     createKyc:function(k){return apiFetch('/api/kycs',{method:'POST',body:k,idempotencyKey:idKey('kyc')});},
@@ -87,9 +100,11 @@
     setSettings:function(){return Promise.resolve();},
     getTransactions:function(){return apiFetch(listUrl('/api/transactions'));},
     getNotifications:function(){return apiFetch('/api/notifications');},
-    uploadFile:function(){return Promise.resolve(null);}
+    uploadFile:function(file){return uploadMedia(file).then(function(r){return r.url;});},
+    uploadMedia:uploadMedia
   };
   window.DB=DB;
+  window.uploadMedia=uploadMedia;
   window.Auth={ getSession:function(){ return apiFetch('/api/auth/me').then(function(r){return r.user;}).catch(function(){return null;}); } };
   window.BinanceGoldAPI={fetch:apiFetch};
 

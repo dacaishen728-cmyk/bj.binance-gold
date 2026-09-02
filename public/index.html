@@ -261,6 +261,7 @@ html[data-theme="dark"] .logout-confirm-btn { background: #f0b90b; color: #11111
 #heroBanner > .relative.z-10 { min-height: 190px; padding: 20px; }
 }
 .hero-bg-slide { width: 20%; height: 100%; flex-shrink: 0; background-size: cover; background-position: center; position: relative; }
+.hero-bg-slide video.hero-bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .hero-bg-slide.has-image::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,0,0,0.45), rgba(0,0,0,0.15)); }
 .hero-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.45); border: none; cursor: pointer; transition: all 0.3s; padding: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
 .hero-dot.active { background: #ffffff; width: 20px; border-radius: 4px; }
@@ -493,6 +494,8 @@ html[data-theme="light"] { color-scheme: light; }
 <button class="lang-btn" id="langBtn" onclick="toggleLanguage()">
 <span class="flag" id="langFlag">🇹🇭</span><span id="langText">TH</span>
 </button>
+<!-- ไอคอนฝ่ายบริการ: สมาชิก = แชทบัญชีตัวเอง, ผู้เยี่ยมชม (ไม่ล็อกอิน) = guest chat -->
+<button class="theme-btn" id="supportChatBtn" onclick="openSupportChat()" title="ฝ่ายบริการลูกค้า" aria-label="ฝ่ายบริการลูกค้า"><i class="fas fa-headset"></i></button>
 </div>
 </div>
 
@@ -1289,7 +1292,7 @@ function showTab(tabId, btn) {
   if (tabId === 'fund') loadFundData();
 }
 
-function openModal(id) { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; if (id === 'chatModal') { renderChat(); startChatPolling(); } }
+function openModal(id) { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; if (id === 'chatModal') { if (typeof guestChatMode !== 'undefined') guestChatMode = !currentUser; renderChat(); startChatPolling(); } }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); document.body.style.overflow = ''; if (id === 'chatModal') stopChatPolling(); }
 
 // ==================== 15 LANGUAGES ====================
@@ -2524,6 +2527,18 @@ function copyUserId() {
 let chatPollTimer = null;
 let chatLastTs = null;          // ISO timestamp cursor for ?since=
 let chatKnownIds = {};          // ids already rendered (dedup optimistic vs polled)
+// Guest chat (ผู้เยี่ยมชมที่ยังไม่ล็อกอิน): token เก็บใน localStorage
+// bg_guest_token; thread ฝั่ง server คือ chats.user_id = 'guest:<token>'
+let guestChatMode = false;
+function guestChatToken() { try { return localStorage.getItem('bg_guest_token') || null; } catch (e) { return null; } }
+function saveGuestToken(tk) { try { if (tk) localStorage.setItem('bg_guest_token', tk); } catch (e) {} }
+// ปุ่มไอคอนหูฟังบนแถบบน: ล็อกอินแล้ว = แชทสมาชิกเดิม, ยังไม่ล็อกอิน = guest chat
+function openSupportChat() {
+  guestChatMode = !currentUser;
+  const ttl = document.getElementById('chatTitle');
+  if (ttl) ttl.textContent = guestChatMode ? (t('chatTitle') + ' • ' + (currentLang === 'th' ? 'ผู้เยี่ยมชม' : 'Guest')) : t('chatTitle');
+  openModal('chatModal');
+}
 
 function chatModalIsOpen() {
   const m = document.getElementById('chatModal');
@@ -2554,7 +2569,18 @@ function appendChatMessages(chats) {
 }
 
 async function pollChatNew() {
-  if (!currentUser || !chatModalIsOpen() || document.hidden) return;
+  if (!chatModalIsOpen() || document.hidden) return;
+  if (guestChatMode) {
+    const gtk = guestChatToken();
+    if (!gtk) return;
+    try {
+      const list = await DB.guestChatList(gtk, chatLastTs || undefined);
+      const fresh = (list || []).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+      appendChatMessages(fresh);
+    } catch (e) { console.error('guest chat poll', e); }
+    return;
+  }
+  if (!currentUser) return;
   try {
     const list = await DB.getChatsByUser(currentUser.id, chatLastTs || undefined);
     const fresh = (list || []).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
@@ -2564,7 +2590,8 @@ async function pollChatNew() {
 
 function startChatPolling() {
   stopChatPolling();
-  chatPollTimer = setInterval(function () { if (!document.hidden) pollChatNew(); }, 2000);
+  // guest poll 4 วินาที/ครั้ง (เบากว่าสมาชิก 2s) เฉพาะตอนหน้าต่างแชทเปิด — กัน rate limit สะสมจากผู้เยี่ยมชมจำนวนมาก
+  chatPollTimer = setInterval(function () { if (!document.hidden) pollChatNew(); }, guestChatMode ? 4000 : 2000);
 }
 
 function stopChatPolling() {
@@ -2576,6 +2603,7 @@ function buildChatId() {
 }
 
 async function sendMessage() {
+  if (guestChatMode) return sendGuestMessage();
   if (!currentUser) return;
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
@@ -2610,12 +2638,37 @@ async function sendMessage() {
   pollChatNew();
 }
 
+// Guest chat (ไม่ล็อกอิน): ส่งข้อความผ่าน /api/chat/guest — token ถูกสร้างอัตโนมัติครั้งแรก
+async function sendGuestMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const sendBtn = document.getElementById('chatSendBtn');
+  if (sendBtn) sendBtn.disabled = true; // กันกดซ้ำ
+  const nowIso = new Date().toISOString();
+  const chat = { id: buildChatId(), sender: 'user', message: text, type: 'text', createdAt: nowIso, created_at: nowIso };
+  input.value = '';
+  chatKnownIds[chat.id] = true;
+  if (!chatLastTs || nowIso > chatLastTs) chatLastTs = nowIso;
+  if (chatModalIsOpen()) {
+    const container = document.getElementById('chatMessages');
+    container.insertAdjacentHTML('beforeend', chatBubbleHtml(chat));
+    container.scrollTop = container.scrollHeight;
+  }
+  try {
+    const r = await DB.guestChatSend({ token: guestChatToken(), message: text, type: 'text' });
+    if (r && r.token) saveGuestToken(r.token);
+  } catch (e) { console.error(e); showToast((e && e.message) || t('error') || 'ส่งข้อความไม่สำเร็จ'); }
+  if (sendBtn) sendBtn.disabled = false;
+  pollChatNew();
+}
+
 async function sendChatImage(imageUrl) {
   const nowIso = new Date().toISOString();
   const chat = {
     id: buildChatId(),
-    user_id: currentUser.id,
-    userId: currentUser.id,
+    user_id: currentUser ? currentUser.id : undefined,
+    userId: currentUser ? currentUser.id : undefined,
     sender: 'user',
     message: imageUrl,
     type: 'image',
@@ -2629,17 +2682,25 @@ async function sendChatImage(imageUrl) {
     container.insertAdjacentHTML('beforeend', chatBubbleHtml(chat));
     container.scrollTop = container.scrollHeight;
   }
+  if (guestChatMode) {
+    try {
+      const r = await DB.guestChatSend({ token: guestChatToken(), message: imageUrl, type: 'image' });
+      if (r && r.token) saveGuestToken(r.token);
+    } catch (e) { console.error(e); showToast((e && e.message) || t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); }
+    pollChatNew();
+    return;
+  }
   await DB.createChat(chat);
   pollChatNew();
 }
 
 async function handleChatImageUpload(input) {
-  if (!currentUser) return;
+  if (!currentUser && !guestChatMode) return;
   const file = input.files[0];
   if (!file) return;
 
   let imageUrl = null;
-  if (isSupabaseConnected()) {
+  if (!guestChatMode && isSupabaseConnected()) {
     try {
       imageUrl = await DB.uploadFile('avatars', `chat_${Date.now()}_${file.name}`, file);
     } catch(e) { console.log('Upload failed, using data URL'); }
@@ -2659,9 +2720,17 @@ async function handleChatImageUpload(input) {
 }
 
 async function renderChat() {
-  if (!currentUser) return;
   const container = document.getElementById('chatMessages');
-  const chats = (await DB.getChatsByUser(currentUser.id)).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+  let chats = [];
+  if (guestChatMode) {
+    // ผู้เยี่ยมชม: มี token แล้วค่อยดึงประวัติ; ยังไม่มี = ห้องว่าง (token ถูกสร้างตอนส่งข้อความแรก)
+    const gtk = guestChatToken();
+    if (gtk) { try { chats = await DB.guestChatList(gtk); } catch (e) { console.error(e); } }
+  } else {
+    if (!currentUser) return;
+    chats = await DB.getChatsByUser(currentUser.id);
+  }
+  chats = chats.sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
   // Full render resets the incremental cursor/dedup state.
   chatKnownIds = {};
   chatLastTs = null;
@@ -3181,12 +3250,35 @@ async function applyHeroSlides() {
       const el = document.getElementById('heroBg' + n);
       if (!el) return;
       const src = settings['heroImage' + n];
-      if (src) {
-        el.style.backgroundImage = 'url(' + src + ')';
-        el.classList.add('has-image');
-      } else {
+      // วิดีโอ (อัปโหลดขึ้น R2 จากหลังบ้าน นามสกุล .mp4/.webm/.mov) แสดงเป็น <video> เต็มกรอบ
+      const isVid = !!(src && /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(String(src)));
+      let vid = el.querySelector('video.hero-bg-video');
+      if (src && isVid) {
         el.style.backgroundImage = '';
-        el.classList.remove('has-image'); // กลับเป็นพื้นหลังสีส้มเดิม
+        if (!vid) {
+          vid = document.createElement('video');
+          vid.className = 'hero-bg-video';
+          vid.autoplay = true; vid.loop = true;
+          vid.muted = true; vid.setAttribute('muted', ''); // autoplay policy: ต้อง muted เสมอ
+          vid.playsInline = true; vid.setAttribute('playsinline', '');
+          vid.preload = 'auto';
+          el.insertBefore(vid, el.firstChild);
+        }
+        vid.muted = true; // กัน attr หลุด — เบราว์เซอร์บล็อก autoplay ที่มีเสียง
+        if (vid.getAttribute('src') !== src) {
+          vid.src = src;
+          const p = vid.play(); if (p && p.catch) p.catch(function() {});
+        }
+        el.classList.add('has-image'); // ใช้ overlay + ตัวหนังสือขาวเหมือนสไลด์รูป
+      } else {
+        if (vid) { try { vid.pause(); } catch(e) {} vid.remove(); }
+        if (src) {
+          el.style.backgroundImage = 'url(' + src + ')';
+          el.classList.add('has-image');
+        } else {
+          el.style.backgroundImage = '';
+          el.classList.remove('has-image'); // กลับเป็นพื้นหลังสีส้มเดิม
+        }
       }
     });
     goHeroSlide(heroIdx); // refresh text color/dots
