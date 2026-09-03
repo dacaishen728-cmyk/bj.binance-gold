@@ -136,6 +136,8 @@ body { background: #050505; color: #e5e5e5; margin: 0; padding: 0; overflow-x: h
 .badge-failed { background: rgba(100, 100, 100, 0.2); color: #888; }
 .note-badge { display: inline-block; margin-top: 2px; background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); font-size: 11px; padding: 1px 8px; border-radius: 10px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
 .uid-badge { display: inline-block; margin-top: 2px; background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); font-family: ui-monospace, monospace; font-size: 11px; padding: 1px 7px; border-radius: 8px; white-space: nowrap; vertical-align: middle; }
+/* Badge แชทผู้เยี่ยมชม (guest chat ไม่ได้ล็อกอิน) — สีฟ้าแยกจาก badge สมาชิก */
+.guest-badge { display: inline-block; margin-top: 2px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); font-size: 11px; padding: 1px 7px; border-radius: 8px; white-space: nowrap; vertical-align: middle; }
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #888; border-bottom: 1px solid #1a1a1a; }
 td { padding: 12px 16px; border-bottom: 1px solid #1a1a1a; font-size: 14px; color: #ccc; }
@@ -179,7 +181,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #eab308; animation: spin 0.8s linear infinite; margin-right: 8px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .mobile-menu-btn { display: none; }
-@media (max-width: 1024px) { .mobile-menu-btn { display: block; } }
+@media (max-width: 1024px) { .mobile-menu-btn { display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; min-width: 50px; font-size: 21px; border-radius: 12px; margin-top: 10px; touch-action: manipulation; } }
 .lang-switcher { display: flex; gap: 8px; margin-bottom: 16px; }
 .lang-switcher button { padding: 6px 12px; border-radius: 8px; border: 1px solid #333; background: #111; color: #888; cursor: pointer; font-size: 12px; }
 .lang-switcher button.active { background: #eab308; color: #000; border-color: #eab308; font-weight: 700; }
@@ -370,7 +372,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <!-- DASHBOARD -->
 <div class="tab-content active p-6" id="tab-dashboard">
 <!-- ปุ่มแก้ไขข้อความหน้าแรก (เพิ่มใหม่) -->
-<div class="mb-6"><button class="btn-primary" onclick="openHomeTextEditor()"><i class="fas fa-pen"></i> แก้ไขข้อความหน้าแรก</button></div>
+<div class="mb-6"><button class="btn-primary" id="homeTextEditBtn" onclick="openHomeTextEditor()"><i class="fas fa-pen"></i> แก้ไขข้อความหน้าแรก</button></div>
 <div class="grid-4 mb-6">
 <div class="stat-card">
 <div class="flex items-center justify-between mb-2">
@@ -491,7 +493,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div class="tab-content p-6" id="tab-fund">
 <div class="flex justify-between items-center mb-6">
 <h2 class="text-2xl font-bold text-white" id="fundTitle" data-i18n="fund">จัดการกองทุน</h2>
-<select id="fundFilter" onchange="loadFundInvestments()" style="width: 170px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="active" data-i18n="optActive">กำลังลงทุน</option><option value="expired" data-i18n="optExpired">ครบกำหนด รอผล</option><option value="win" data-i18n="optWin">ชนะ</option><option value="lose" data-i18n="optFundLose">ขาดทุน</option></select>
+<select id="fundFilter" onchange="loadFundInvestments()" style="width: 170px !important; background: #111 !important;"><option value="all" data-i18n="optAll">ทั้งหมด</option><option value="active" data-i18n="optActive">กำลังลงทุน</option><option value="expired" data-i18n="optExpired">ครบกำหนด รอผล</option><option value="win" data-i18n="optWin">กำไร</option></select>
 </div>
 
 <div class="card mb-6">
@@ -563,7 +565,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div class="form-group"><label>ที่อยู่ USDT (TRC20)</label><input id="p2pAddress" placeholder="ที่อยู่กระเป๋า USDT" type="text"/></div>
 <div class="form-group"><label data-i18n="lblWithdrawFee">ค่าธรรมเนียมถอน (USDT)</label><input id="p2pWithdrawFee" placeholder="1" type="number" min="0" step="0.01"/></div>
 <div class="form-group"><label data-i18n="lblMinWithdraw">ขั้นต่ำการถอน (USDT)</label><input id="p2pMinWithdraw" placeholder="10" type="number" min="0"/></div>
-<button class="btn-primary w-full" onclick="saveP2PSettings()"><i class="fas fa-save"></i> บันทึกการตั้งค่า P2P</button>
+<button class="btn-primary w-full" onclick="saveP2PSettings(this)"><i class="fas fa-save"></i> บันทึกการตั้งค่า P2P</button>
 </div>
 </div>
 </div>
@@ -580,7 +582,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div id="packagesList" class="space-y-3"></div>
 <div class="flex gap-2">
 <button class="btn-primary" onclick="addPackageRow()"><i class="fas fa-plus"></i> <span data-i18n="btnAddPkg">เพิ่มแพ็คเกจ</span></button>
-<button class="btn-success" onclick="savePackages()"><i class="fas fa-save"></i> <span data-i18n="btnSavePkg">บันทึกแพ็คเกจ</span></button>
+<button class="btn-success" onclick="savePackages(this)"><i class="fas fa-save"></i> <span data-i18n="btnSavePkg">บันทึกแพ็คเกจ</span></button>
 </div>
 </div>
 </div>
@@ -616,14 +618,14 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 </div>
 <div class="card lg:col-span-2">
 <h3 class="font-bold mb-4 text-white"><i class="fas fa-images text-yellow-400 mr-2"></i><span data-i18n="heroCard">ภาพพื้นหลังหน้าแรก (สไลด์ 5 รูป)</span></h3>
-<p class="text-xs text-gray-500 mb-4">รูปที่ 1 จะแทนที่พื้นหลังสีส้ม — เลื่อนขวาเพื่อดูรูปถัดไป (เลื่อนอัตโนมัติ) หากไม่อัพโหลดหรือกดลบ จะกลับเป็นพื้นหลังสีส้มแบบเดิม</p>
+<p class="text-xs text-gray-500 mb-4">รองรับ <b>รูปภาพ</b> และ <b>วิดีโอสั้นสูงสุด 1 นาที</b> (mp4/webm/mov ≤ 80MB) — รูปที่ 1 จะแทนที่พื้นหลังสีส้ม เลื่อนขวาเพื่อดูรูปถัดไป (เลื่อนอัตโนมัติ) หากไม่อัพโหลดหรือกดลบ จะกลับเป็นพื้นหลังสีส้มแบบเดิม — วิดีโอจะเล่นอัตโนมัติแบบปิดเสียงเต็มกรอบ</p>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 <div class="border border-[#1a1a1a] rounded-xl p-4">
 <div class="text-sm font-bold text-yellow-400 mb-2">รูปที่ 1 (หลัก)</div>
 <div class="flex flex-col items-center">
 <img src="" class="mb-3 hidden" id="heroPreview1" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
 <div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput1').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(1)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
-<input type="file" id="heroInput1" accept="image/*" onchange="handleHeroUpload(this, 1)" style="display: none;"/>
+<input type="file" id="heroInput1" accept="image/*,video/mp4,video/webm,video/quicktime" onchange="handleHeroUpload(this, 1)" style="display: none;"/>
 </div>
 </div>
 <div class="border border-[#1a1a1a] rounded-xl p-4">
@@ -631,7 +633,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div class="flex flex-col items-center">
 <img src="" class="mb-3 hidden" id="heroPreview2" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
 <div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput2').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(2)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
-<input type="file" id="heroInput2" accept="image/*" onchange="handleHeroUpload(this, 2)" style="display: none;"/>
+<input type="file" id="heroInput2" accept="image/*,video/mp4,video/webm,video/quicktime" onchange="handleHeroUpload(this, 2)" style="display: none;"/>
 </div>
 </div>
 <div class="border border-[#1a1a1a] rounded-xl p-4">
@@ -639,7 +641,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div class="flex flex-col items-center">
 <img src="" class="mb-3 hidden" id="heroPreview3" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
 <div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput3').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(3)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
-<input type="file" id="heroInput3" accept="image/*" onchange="handleHeroUpload(this, 3)" style="display: none;"/>
+<input type="file" id="heroInput3" accept="image/*,video/mp4,video/webm,video/quicktime" onchange="handleHeroUpload(this, 3)" style="display: none;"/>
 </div>
 </div>
 <div class="border border-[#1a1a1a] rounded-xl p-4">
@@ -647,7 +649,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div class="flex flex-col items-center">
 <img src="" class="mb-3 hidden" id="heroPreview4" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
 <div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput4').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(4)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
-<input type="file" id="heroInput4" accept="image/*" onchange="handleHeroUpload(this, 4)" style="display: none;"/>
+<input type="file" id="heroInput4" accept="image/*,video/mp4,video/webm,video/quicktime" onchange="handleHeroUpload(this, 4)" style="display: none;"/>
 </div>
 </div>
 <div class="border border-[#1a1a1a] rounded-xl p-4">
@@ -655,7 +657,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 <div class="flex flex-col items-center">
 <img src="" class="mb-3 hidden" id="heroPreview5" style="width:100%;height:120px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#eab308,#f97316);">
 <div class="flex gap-2 mt-2"><button class="btn-secondary text-sm" onclick="document.getElementById('heroInput5').click()"><i class="fas fa-upload"></i> <span data-i18n="btnUpload">อัพโหลด</span></button><button class="btn-danger text-sm" onclick="deleteHeroImage(5)"><i class="fas fa-trash"></i> <span data-i18n="btnDelete">ลบ</span></button></div>
-<input type="file" id="heroInput5" accept="image/*" onchange="handleHeroUpload(this, 5)" style="display: none;"/>
+<input type="file" id="heroInput5" accept="image/*,video/mp4,video/webm,video/quicktime" onchange="handleHeroUpload(this, 5)" style="display: none;"/>
 </div>
 </div>
 </div>
@@ -673,7 +675,7 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 </div>
 <div class="form-group"><label data-i18n="lblWelcome">ข้อความต้อนรับ (หน้าแรก)</label><textarea id="settingsWelcome" placeholder="ข้อความต้อนรับ..."></textarea><small style="color:#9ca3af;font-size:12px;">เว้นว่าง = ไม่แสดงข้อความบนหน้าแรก</small></div>
 <div class="form-group"><label data-i18n="lblAbout">เกี่ยวกับเรา (About Us)</label><textarea id="settingsAboutUs" placeholder="ข้อความเกี่ยวกับเรา..." rows="8"></textarea></div>
-<button class="btn-primary w-full" onclick="saveSettings()"><i class="fas fa-save"></i> <span data-i18n="btnSaveSettings">บันทึกการตั้งค่า</span></button>
+<button class="btn-primary w-full" onclick="saveSettings(this)"><i class="fas fa-save"></i> <span data-i18n="btnSaveSettings">บันทึกการตั้งค่า</span></button>
 <div class="form-group"><label>สีปุ่มเริ่มต้นใช้งาน</label><input id="settingsCtaBtnBg" type="color" value="#000000" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
 <div class="form-group"><label>สีตัวหนังสือปุ่มเริ่มต้นใช้งาน</label><input id="settingsCtaBtnText" type="color" value="#ffffff" style="height:52px;padding:6px !important;cursor:pointer;background:#111 !important;"/></div>
 <button class="btn-primary w-full" onclick="saveCtaColors()"><i class="fas fa-save"></i> บันทึกสีปุ่ม</button>
@@ -707,12 +709,12 @@ html[data-theme="light"] .chat-back-btn { background:#fff; color:#1f2937; border
 </div></div></div>
 <div class="modal" id="editDepositModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขรายการฝากเงิน</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editDepositModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>จำนวนเงิน (USDT)</label><input id="editDepositAmount" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>สถานะ</label><select id="editDepositStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved">อนุมัติ</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option></select></div><button class="btn-primary w-full" onclick="saveDepositEdit()">บันทึกการแก้ไข</button></div></div></div>
 <div class="modal" id="editWithdrawModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">แก้ไขรายการถอนเงิน</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('editWithdrawModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>จำนวนเงิน (USDT)</label><input id="editWithdrawAmount" type="number" step="0.01" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>สถานะ</label><select id="editWithdrawStatus" style="background:#fbbf24 !important;color:#000 !important;"><option value="pending" data-i18n="optReview">รอตรวจสอบ</option><option value="approved">อนุมัติ</option><option value="rejected" data-i18n="optRejected">ปฏิเสธ</option><option value="failed" data-i18n="optFailed">ล้มเหลว</option></select></div><div class="form-group"><label>หมายเหตุ</label><textarea id="editWithdrawNote" style="background:#fbbf24 !important;color:#000 !important;"></textarea></div><button class="btn-primary w-full" onclick="saveWithdrawEdit()">บันทึกการแก้ไข</button></div></div></div>
-<div class="modal" id="addAdminModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">เพิ่มผู้ดูแลระบบ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('addAdminModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อผู้ใช้</label><input id="newAdminUsername" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ชื่อ</label><input id="newAdminName" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>รหัสผ่าน</label><input id="newAdminPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ยืนยันรหัสผ่าน</label><input id="newAdminConfirmPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><button class="btn-primary w-full" onclick="addAdmin()">เพิ่มผู้ดูแลระบบ</button></div></div></div>
+<div class="modal" id="addAdminModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">เพิ่มผู้ดูแลระบบ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('addAdminModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อผู้ใช้</label><input id="newAdminUsername" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ชื่อ</label><input id="newAdminName" type="text" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>รหัสผ่าน</label><input id="newAdminPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ยืนยันรหัสผ่าน</label><input id="newAdminConfirmPassword" type="password" style="background:#fbbf24 !important;color:#000 !important;"/></div><button class="btn-primary w-full" id="addAdminSubmitBtn" onclick="addAdmin(this)">เพิ่มผู้ดูแลระบบ</button></div></div></div>
 <div class="modal" id="depositSlipModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">หลักฐานการโอน (Slip)</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('depositSlipModal')"><i class="fas fa-times"></i></button></div><div class="text-center"><img id="depositSlipImg" src="" class="slip-preview" style="display:none;"><div id="depositSlipNoImg" class="text-gray-500 py-8">ไม่มีรูปสลิป</div></div></div></div>
 <div class="modal" id="kycDetailModal"><div class="modal-content xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">รายละเอียด KYC</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('kycDetailModal')"><i class="fas fa-times"></i></button></div><div id="kycDetailContent"></div></div></div>
 <div class="modal" id="imagePreviewModal"><div class="modal-content" style="max-width:700px;"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">ดูรูปภาพ</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('imagePreviewModal')"><i class="fas fa-times"></i></button></div><div class="text-center"><img id="previewImage" src="" style="max-width:100%;border-radius:12px;"></div></div></div>
 <!-- Modal แก้ไขข้อความหน้าแรก (เพิ่มใหม่) -->
-<div class="modal" id="homeTextModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-pen text-yellow-400 mr-2"></i>แก้ไขข้อความหน้าแรก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('homeTextModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อเว็บไซต์</label><input id="homeEditSiteName" type="text" placeholder="Binance Gold" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ข้อความต้อนรับ (หน้าแรก)</label><textarea id="homeEditWelcome" placeholder="ข้อความต้อนรับ..." style="background:#fbbf24 !important;color:#000 !important;"></textarea><small style="color:#9ca3af;font-size:12px;">เว้นว่าง = ไม่แสดงข้อความบนหน้าแรก</small></div><button class="btn-primary w-full" onclick="saveHomeText()"><i class="fas fa-save"></i> บันทึก</button></div></div></div>
+<div class="modal" id="homeTextModal"><div class="modal-content"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white"><i class="fas fa-pen text-yellow-400 mr-2"></i>แก้ไขข้อความหน้าแรก</h3><button class="text-gray-500 hover:text-white" onclick="closeModal('homeTextModal')"><i class="fas fa-times"></i></button></div><div class="space-y-4"><div class="form-group"><label>ชื่อเว็บไซต์</label><input id="homeEditSiteName" type="text" placeholder="Binance Gold" style="background:#fbbf24 !important;color:#000 !important;"/></div><div class="form-group"><label>ข้อความต้อนรับ (หน้าแรก)</label><textarea id="homeEditWelcome" placeholder="ข้อความต้อนรับ..." style="background:#fbbf24 !important;color:#000 !important;"></textarea><small style="color:#9ca3af;font-size:12px;">เว้นว่าง = ไม่แสดงข้อความบนหน้าแรก</small></div><button class="btn-primary w-full" onclick="saveHomeText(this)"><i class="fas fa-save"></i> บันทึก</button></div></div></div>
 
 <script>
 
@@ -771,7 +773,7 @@ th: {
   thMember: 'สมาชิก', thAmount: 'จำนวน', thStatus: 'สถานะ', thDate: 'วันที่', thManage: 'จัดการ', thType: 'ประเภท', thPhone: 'เบอร์โทร', thBalance: 'ยอดเงิน', thSlip: 'สลิป', thInfo: 'ข้อมูล', thFullName: 'ชื่อ-นามสกุล', thIdCard: 'เลขบัตร', thDocs: 'เอกสาร', thPair: 'คู่เงิน', thPackage: 'แพ็คเกจ', thRemain: 'เวลาคงเหลือ', thResult: 'ผล', thProfitPct: 'กำไร %', thDuration: 'ระยะเวลา',
   optAll: 'ทั้งหมด', optPending: 'รอผล', optReview: 'รอตรวจสอบ', optWin: 'ชนะ', optLose: 'แพ้', optApproved: 'อนุมัติแล้ว', optRejected: 'ปฏิเสธ', optFailed: 'ล้มเหลว', optActive: 'กำลังลงทุน', optExpired: 'ครบกำหนด รอผล', optFundLose: 'ขาดทุน',
   dashStats: 'สถิติรวม', balanceCard: 'ยอดเงินในระบบ', dashUsers: 'สมาชิกล่าสุด', dashNotif: 'แจ้งเตือนล่าสุด',
-  fundPkgCard: 'แพ็คเกจกองทุน (แสดงหน้าเว็บ)', fundListCard: 'รายการลงทุนของสมาชิก', autoTradeCard: 'ตั้งค่าผลการซื้อขายอัตโนมัติตามสมาชิก', pkgCard: 'ตั้งค่าแพ็คเกจซื้อขาย', logoCard: 'โลโก้เว็บไซต์', walletCard: 'ตั้งค่ากระเป๋าเงิน', heroCard: 'ภาพพื้นหลังหน้าแรก (สไลด์ 5 รูป)', siteInfoCard: 'ข้อมูลเว็บไซต์', p2pQrCard: 'QR Code สำหรับฝากเงิน', chatListCard: 'รายชื่อลูกค้า',
+  fundPkgCard: 'แพ็คเกจกองทุน (แสดงหน้าเว็บ)', fundListCard: 'รายการลงทุนของสมาชิก', autoTradeCard: 'ตั้งค่าผลการซื้อขายอัตโนมัติตามสมาชิก', pkgCard: 'ตั้งค่าแพ็คเกจซื้อขาย', logoCard: 'โลโก้เว็บไซต์', walletCard: 'ตั้งค่ากระเป๋าเงิน', heroCard: 'ภาพ/วิดีโอพื้นหลังหน้าแรก (สไลด์ 5 ช่อง)', uploadingNow: 'กำลังอัปโหลด...', videoTooLong: 'วิดีโอยาวเกิน 1 นาที กรุณาเลือกคลิปสั้นกว่านี้', uploadMediaBtn: 'อัปโหลดรูปหรือวิดีโอ', siteInfoCard: 'ข้อมูลเว็บไซต์', p2pQrCard: 'QR Code สำหรับฝากเงิน', chatListCard: 'รายชื่อลูกค้า',
   btnSaveSettings: 'บันทึกการตั้งค่า', btnAddPkg: 'เพิ่มแพ็คเกจ', btnSaveFundPkg: 'บันทึกแพ็คเกจกองทุน', btnSavePkg: 'บันทึกแพ็คเกจ', btnUpload: 'อัพโหลด', btnDelete: 'ลบ', btnClear: 'ล้าง',
   lblSiteName: 'ชื่อเว็บไซต์ (แสดงข้างโลโก้)', lblSiteColor: 'สีชื่อเว็บไซต์', lblWelcome: 'ข้อความต้อนรับ (หน้าแรก)', lblAbout: 'เกี่ยวกับเรา (About Us)', lblWithdrawFee: 'ค่าธรรมเนียมถอน (USDT)', lblMinWithdraw: 'ขั้นต่ำการถอน (USDT)', lblBgColor: 'สีพื้นหลังเว็บไซต์', lblBgImage: 'รูปภาพพื้นหลังเว็บไซต์ (ทับสีพื้นหลัง)', lblSelectUser: 'เลือกสมาชิก', lblAutoResult: 'ผลลัพธ์อัตโนมัติ', lblDelay: 'ดีเลย์ (วินาที)', lblWinRate: 'อัตราชนะสุ่ม (%)',
   pkgPercent: 'กำไร (%)', pkgMinutes: 'เวลา (นาที)', pkgMinAmount: 'ยอดขั้นต่ำ (USDT)', pkgSaved: 'บันทึกแพ็คเกจสำเร็จ',
@@ -791,7 +793,7 @@ en: {
   thMember: 'Member', thAmount: 'Amount', thStatus: 'Status', thDate: 'Date', thManage: 'Manage', thType: 'Type', thPhone: 'Phone', thBalance: 'Balance', thSlip: 'Slip', thInfo: 'Info', thFullName: 'Full Name', thIdCard: 'ID Number', thDocs: 'Documents', thPair: 'Pair', thPackage: 'Package', thRemain: 'Remaining', thResult: 'Result', thProfitPct: 'Profit %', thDuration: 'Duration',
   optAll: 'All', optPending: 'Pending', optReview: 'Reviewing', optWin: 'Win', optLose: 'Lose', optApproved: 'Approved', optRejected: 'Rejected', optFailed: 'Failed', optActive: 'Active', optExpired: 'Expired', optFundLose: 'Loss',
   dashStats: 'Overview', balanceCard: 'System Balance', dashUsers: 'Recent Members', dashNotif: 'Recent Notifications',
-  fundPkgCard: 'Fund Packages (shown on site)', fundListCard: 'Member Investments', autoTradeCard: 'Auto Trade Result per Member', pkgCard: 'Trade Packages', logoCard: 'Website Logo', walletCard: 'Wallet Settings', heroCard: 'Home Slider (5 images)', siteInfoCard: 'Website Info', p2pQrCard: 'Deposit QR Code', chatListCard: 'Customers',
+  fundPkgCard: 'Fund Packages (shown on site)', fundListCard: 'Member Investments', autoTradeCard: 'Auto Trade Result per Member', pkgCard: 'Trade Packages', logoCard: 'Website Logo', walletCard: 'Wallet Settings', heroCard: 'Home Slider (5 images/videos)', uploadingNow: 'Uploading...', videoTooLong: 'Video is longer than 1 minute. Please pick a shorter clip.', uploadMediaBtn: 'Upload image or video', siteInfoCard: 'Website Info', p2pQrCard: 'Deposit QR Code', chatListCard: 'Customers',
   btnSaveSettings: 'Save Settings', btnAddPkg: 'Add Package', btnSaveFundPkg: 'Save Fund Packages', btnSavePkg: 'Save Packages', btnUpload: 'Upload', btnDelete: 'Delete', btnClear: 'Clear',
   lblSiteName: 'Site Name (shown next to logo)', lblSiteColor: 'Site Name Color', lblWelcome: 'Welcome Text (Home)', lblAbout: 'About Us', lblWithdrawFee: 'Withdraw Fee (USDT)', lblMinWithdraw: 'Min Withdraw (USDT)', lblBgColor: 'Website Background Color', lblBgImage: 'Website Background Image (overrides color)', lblSelectUser: 'Select Member', lblAutoResult: 'Auto Result', lblDelay: 'Delay (seconds)', lblWinRate: 'Random Win Rate (%)',
   pkgPercent: 'Profit (%)', pkgMinutes: 'Time (minutes)', pkgMinAmount: 'Min Amount (USDT)', pkgSaved: 'Packages saved',
@@ -811,7 +813,7 @@ zh: {
   thMember: '会员', thAmount: '金额', thStatus: '状态', thDate: '日期', thManage: '管理', thType: '类型', thPhone: '电话', thBalance: '余额', thSlip: '凭证', thInfo: '信息', thFullName: '姓名', thIdCard: '证件号', thDocs: '文件', thPair: '交易对', thPackage: '套餐', thRemain: '剩余时间', thResult: '结果', thProfitPct: '利润 %', thDuration: '期限',
   optAll: '全部', optPending: '待结果', optReview: '待审核', optWin: '赢', optLose: '输', optApproved: '已批准', optRejected: '已拒绝', optFailed: '失败', optActive: '投资中', optExpired: '已到期', optFundLose: '亏损',
   dashStats: '统计概览', balanceCard: '系统余额', dashUsers: '最新会员', dashNotif: '最新通知',
-  fundPkgCard: '基金套餐（显示在网站）', fundListCard: '会员投资记录', autoTradeCard: '按会员设置自动交易结果', pkgCard: '交易套餐设置', logoCard: '网站标志', walletCard: '钱包设置', heroCard: '首页轮播图（5张）', siteInfoCard: '网站信息', p2pQrCard: '充值二维码', chatListCard: '客户列表',
+  fundPkgCard: '基金套餐（显示在网站）', fundListCard: '会员投资记录', autoTradeCard: '按会员设置自动交易结果', pkgCard: '交易套餐设置', logoCard: '网站标志', walletCard: '钱包设置', heroCard: '首页轮播图（5个，支持图片/视频）', uploadingNow: '正在上传...', videoTooLong: '视频超过1分钟，请选择更短的视频', uploadMediaBtn: '上传图片或视频', siteInfoCard: '网站信息', p2pQrCard: '充值二维码', chatListCard: '客户列表',
   btnSaveSettings: '保存设置', btnAddPkg: '添加套餐', btnSaveFundPkg: '保存基金套餐', btnSavePkg: '保存套餐', btnUpload: '上传', btnDelete: '删除', btnClear: '清除',
   lblSiteName: '网站名称（显示在Logo旁）', lblSiteColor: '网站名称颜色', lblWelcome: '欢迎文字（首页）', lblAbout: '关于我们', lblWithdrawFee: '提现手续费 (USDT)', lblMinWithdraw: '最低提现 (USDT)', lblBgColor: '网站背景颜色', lblBgImage: '网站背景图片（覆盖颜色）', lblSelectUser: '选择会员', lblAutoResult: '自动结果', lblDelay: '延迟（秒）', lblWinRate: '随机胜率 (%)',
   pkgPercent: '利润 (%)', pkgMinutes: '时间（分钟）', pkgMinAmount: '最低金额 (USDT)', pkgSaved: '套餐已保存',
@@ -1263,12 +1265,15 @@ async function checkAdminAuth() {
 
 // จำกัดสิทธิ์: ผู้ดูแลระบบที่ถูกเพิ่ม (ไม่ใช่ superadmin) ไม่เห็นเมนู ผู้ดูแลระบบ / ตั้งค่า P2P / ตั้งค่าเว็บไซต์
 function applyAdminRoleRestrictions() {
-  const isSuper = !!(currentAdmin && currentAdmin.role === 'superadmin');
+  const isSuper = !!(currentAdmin && (currentAdmin.role === 'superadmin' || currentAdmin.role === 'super'));
   ['menuAdmins', 'menuP2P', 'menuSettings'].forEach(id => {
     const span = document.getElementById(id);
     const item = span ? span.closest('.sidebar-item') : null;
     if (item) item.style.display = isSuper ? '' : 'none';
   });
+  // ปุ่มแก้ข้อความหน้าแรก = site settings → superadmin เท่านั้น (server reject PUT /api/settings อยู่แล้ว)
+  const homeBtn = document.getElementById('homeTextEditBtn');
+  if (homeBtn) homeBtn.style.display = isSuper ? '' : 'none';
 }
 
 function escNote(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -1312,7 +1317,7 @@ async function refreshAdminData() {
 
 function showAdminTab(tabId, element) {
   // guard สิทธิ์ sub-admin
-  if (currentAdmin && currentAdmin.role !== 'superadmin' && ['admins', 'p2p', 'settings'].includes(tabId)) {
+  if (currentAdmin && !['superadmin', 'super'].includes(currentAdmin.role) && ['admins', 'p2p', 'settings'].includes(tabId)) {
     tabId = 'dashboard';
     element = document.querySelector('.sidebar-item');
   }
@@ -1365,7 +1370,8 @@ async function openHomeTextEditor() {
   document.getElementById('homeEditWelcome').value = s.welcomeText || s.welcome_text || '';
   openModal('homeTextModal');
 }
-async function saveHomeText() {
+async function saveHomeText(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
   const siteName = document.getElementById('homeEditSiteName').value;
   const welcomeText = document.getElementById('homeEditWelcome').value;
@@ -1375,6 +1381,7 @@ async function saveHomeText() {
   closeModal('homeTextModal');
   showToast('บันทึกข้อความหน้าแรกสำเร็จ', 'success');
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 }
 
 function startAutoRefresh() {
@@ -1400,8 +1407,8 @@ function startAutoRefresh() {
       // ไม่ต้อง reload ซ้ำในรอบ 30s — กัน re-render ทั้งกระดานและ scroll กระตุก
     }
   }, 30000);
-  // Light alert poll ทุก 10s: ดึงเฉพาะ 4 list ที่ใช้ตัดสินเสียงแจ้งเตือน (ฝาก/ถอน/เทรด/แชท)
-  // = 24 req/นาที อยู่ในงบ rate limit — เสียงดังเร็วขึ้นโดยไม่รอ full refresh 30s
+  // Light alert poll ทุก 10s: ดึง 5 list (ฝาก/ถอน/เทรด/แชท/กองทุน)
+  // = 30 req/นาที อยู่ในงบ rate limit — เสียงดังเร็วขึ้นโดยไม่รอ full refresh 30s
   if (alertPollInterval) clearInterval(alertPollInterval);
   alertPollInterval = setInterval(() => {
     if (document.hidden) return;
@@ -1412,11 +1419,14 @@ function startAutoRefresh() {
 // Poll เบาๆ เฉพาะข้อมูลที่จำเป็นสำหรับเสียงแจ้งเตือน (ไม่ re-render UI, ไม่แตะ badge ตัวเลข)
 async function pollAlertsLight() {
   try {
-    const [deps, wds, trs, chs] = await Promise.all([DB.getDeposits(), DB.getWithdraws(), DB.getTrades(), DB.getChats()]);
+    const [deps, wds, trs, chs, fds] = await Promise.all([DB.getDeposits(), DB.getWithdraws(), DB.getTrades(), DB.getChats(), DB.getFunds()]);
     handleDepositAlerts(deps || []);
     handleWithdrawAlerts(wds || []);
     handleTradeAlerts(trs || []);
     handleChatAlerts(chs || []);
+    // กองทุน: อัปเดต badge ให้ทันข้อมูล (ไม่มีเสียงแจ้งเตือนเฉพาะ — เสียงเทรดครอบคลุมอยู่แล้ว)
+    const badgeFundEl = document.getElementById('badgeFund');
+    if (badgeFundEl) badgeFundEl.textContent = (fds || []).filter(f => f.status === 'active').length;
   } catch (e) { console.warn('alert poll', e); }
 }
 
@@ -1897,8 +1907,16 @@ async function loadChatUsers() {
       chatUsers.push({ user: u, lastChat: userChats[userChats.length - 1], unread: userChats.filter(c => c.sender === 'user' && !c.read).length }); 
     } 
   });
+  // Guest threads (ผู้เยี่ยมชม ไม่ได้สมัครสมาชิก): user_id = 'guest:<token>'
+  // ไม่มี row ในตาราง users — สร้าง pseudo-user ให้โผล่ในลิสต์พร้อม badge แยก
+  const guestThreads = {};
+  chats.forEach(c => { const cid = String(c.user_id || c.userId || ''); if (cid.indexOf('guest:') === 0) { (guestThreads[cid] = guestThreads[cid] || []).push(c); } });
+  Object.keys(guestThreads).forEach(gid => {
+    const gc = guestThreads[gid];
+    chatUsers.push({ user: { id: gid, name: 'ผู้เยี่ยมชม', phone: gid.slice(6, 14) + '…', guest: true }, lastChat: gc[gc.length - 1], unread: gc.filter(c => c.sender === 'user' && !c.read).length });
+  });
   chatUsers.sort((a, b) => new Date(b.lastChat.created_at || b.lastChat.createdAt) - new Date(a.lastChat.created_at || a.lastChat.createdAt));
-  document.getElementById('chatUserList').innerHTML = chatUsers.map(c => `<div class="chat-user-item ${c.user.id === currentChatUserId ? 'active' : ''}" onclick="selectChatUser('${c.user.id}')"><div class="chat-user-avatar">${(c.user.name || 'U').charAt(0)}</div><div class="flex-1" style="min-width:0;"><div class="font-bold text-sm text-white" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.user.name} ${uidBadge(userCodeOf(c.lastChat, c.user))}</div><div class="text-xs text-gray-500" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.lastChat.type === 'image' ? '[รูปภาพ]' : c.lastChat.message.substring(0, 30)}</div></div>${c.unread > 0 ? `<span class="badge-count">${c.unread}</span>` : `<span class="text-xs text-gray-500">${new Date(c.lastChat.created_at || c.lastChat.createdAt).toLocaleTimeString()}</span>`}</div>`).join('') || '<div class="text-center text-gray-500 py-8">ยังไม่มีข้อความ</div>';
+  document.getElementById('chatUserList').innerHTML = chatUsers.map(c => `<div class="chat-user-item ${c.user.id === currentChatUserId ? 'active' : ''}" onclick="selectChatUser('${c.user.id}')"><div class="chat-user-avatar" ${c.user.guest ? 'style="background:#3b82f6;"' : ''}>${(c.user.name || 'U').charAt(0)}</div><div class="flex-1" style="min-width:0;"><div class="font-bold text-sm text-white" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.user.name} ${c.user.guest ? '<span class="guest-badge">ผู้เยี่ยมชม</span>' : uidBadge(userCodeOf(c.lastChat, c.user))}</div><div class="text-xs text-gray-500" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.lastChat.type === 'image' ? '[รูปภาพ]' : c.lastChat.message.substring(0, 30)}</div></div>${c.unread > 0 ? `<span class="badge-count">${c.unread}</span>` : `<span class="text-xs text-gray-500">${new Date(c.lastChat.created_at || c.lastChat.createdAt).toLocaleTimeString()}</span>`}</div>`).join('') || '<div class="text-center text-gray-500 py-8">ยังไม่มีข้อความ</div>';
   if (chatUsers.length > 0 && !currentChatUserId && window.innerWidth > 768) selectChatUser(chatUsers[0].user.id); // มือถือไม่ auto-open ให้เลือกจากลิสต์ก่อน
 }
 
@@ -1968,10 +1986,11 @@ function stopChatPolling() {
 async function selectChatUser(userId) {
   currentChatUserId = userId;
   clearChatAlertFor(userId); // เปิดแชทลูกค้าคนนี้แล้ว — หยุดเสียงโทรเข้า
-  const user = (await DB.getUsers()).find(u => u.id === userId);
+  let user = (await DB.getUsers()).find(u => u.id === userId);
+  if (!user && String(userId).indexOf('guest:') === 0) user = { id: userId, name: 'ผู้เยี่ยมชม', phone: 'ไม่ได้สมัครสมาชิก', guest: true };
   if (user) {
     document.getElementById('chatUserName').textContent = user.name;
-    document.getElementById('chatUserPhone').textContent = user.phone + ((user.user_code || user.userCode) ? '  •  ID ' + (user.user_code || user.userCode) : '');
+    document.getElementById('chatUserPhone').textContent = user.guest ? 'ผู้เยี่ยมชม • ไม่ได้สมัครสมาชิก' : (user.phone + ((user.user_code || user.userCode) ? '  •  ID ' + (user.user_code || user.userCode) : ''));
     document.getElementById('chatUserAvatar').textContent = user.name.charAt(0);
   }
   document.getElementById('deleteChatBtn').style.display = 'inline-flex';
@@ -2099,33 +2118,38 @@ async function loadAdmins() {
   document.getElementById('adminsTable').innerHTML = admins.map(a => `<tr><td class="font-bold text-white">${a.username}</td><td class="text-gray-300">${a.name || '-'}</td><td><span class="badge badge-${a.role === 'superadmin' ? 'approved' : 'pending'}">${a.role === 'superadmin' ? 'Super' : 'Admin'}</span></td><td class="text-xs text-gray-500">${new Date(a.created_at || a.createdAt).toLocaleDateString()}</td><td><div class="action-btns">${a.role !== 'superadmin' ? `<button class="btn-danger text-xs" onclick="deleteAdmin('${a.id}')"><i class="fas fa-trash"></i></button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="5" class="text-center text-gray-500 py-8">ไม่มีผู้ดูแลระบบ</td></tr>';
 }
 
-async function addAdmin() {
+async function addAdmin(btn) {
+  // feedback ทันทีที่กด + disable กันกดซ้ำ (double-submit)
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.dataset.label = btn.textContent; btn.textContent = 'กำลังบันทึก...'; }
   try {
-  const username = document.getElementById('newAdminUsername').value.trim(); 
+  const username = document.getElementById('newAdminUsername').value.trim();
   const name = document.getElementById('newAdminName').value.trim();
-  const password = document.getElementById('newAdminPassword').value; 
+  const password = document.getElementById('newAdminPassword').value;
   const confirmPassword = document.getElementById('newAdminConfirmPassword').value;
-  if (!username || !password) { showToast('กรอกข้อมูลให้ครบ', 'alert'); return; } 
+  if (!username || !password) { showToast('กรอกข้อมูลให้ครบ', 'alert'); return; }
+  if (String(password).length < 4) { showToast('รหัสผ่านต้องยาวอย่างน้อย 4 ตัวอักษร', 'alert'); return; }
   if (password !== confirmPassword) { showToast('รหัสผ่านไม่ตรงกัน', 'alert'); return; }
 
-  const admins = await DB.getAdmins(); 
+  const admins = await DB.getAdmins();
   if (admins.find(a => a.username === username)) { showToast('ชื่อผู้ใช้ซ้ำ', 'alert'); return; }
 
-  const newAdmin = { 
-    id: 'admin_' + Date.now(), 
-    username, 
-    name, 
-    password, 
-    role: 'admin', 
+  const newAdmin = {
+    id: 'admin_' + Date.now(),
+    username,
+    name,
+    password,
+    role: 'admin',
     createdAt: new Date().toISOString(),
     created_at: new Date().toISOString()
   };
 
   await DB.createAdmin(newAdmin);
-  showToast('เพิ่มผู้ดูแลสำเร็จ', 'success'); 
-  closeModal('addAdminModal'); 
+  showToast('เพิ่มผู้ดูแลสำเร็จ', 'success');
+  ['newAdminUsername','newAdminName','newAdminPassword','newAdminConfirmPassword'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  closeModal('addAdminModal');
   loadAdmins();
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; if (btn.dataset.label) btn.textContent = btn.dataset.label; } }
 }
 
 async function deleteAdmin(id) { 
@@ -2163,7 +2187,8 @@ function handleP2PQRUpload(input) {
   }).finally(function() { input.value = ''; });
 }
 
-async function saveP2PSettings() {
+async function saveP2PSettings(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
   const updates = {
     p2pAddress: document.getElementById('p2pAddress').value,
@@ -2174,6 +2199,7 @@ async function saveP2PSettings() {
   await DB.updateSettings(updates);
   showToast('บันทึกการตั้งค่า P2P สำเร็จ', 'success');
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 }
 
 // ==================== SETTINGS ====================
@@ -2235,21 +2261,70 @@ async function deleteLogo(num) {
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
-// ==================== HERO BACKGROUND SLIDES (5 รูป) ====================
+// ==================== HERO BACKGROUND SLIDES (รูป/วิดีโอ 5 ช่อง) ====================
+// ตรวจว่า url เป็นวิดีโอ (ไฟล์จาก R2 มีนามสกุล .mp4/.webm/.mov เสมอ)
+function isVideoMediaUrl(u) { return /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(String(u || '')); }
+
+// อ่าน metadata วิดีโอฝั่ง client — ยาวเกิน 61 วินาทีไม่อัปโหลด
+function checkVideoDuration(file, maxSec) {
+  return new Promise(function(resolve, reject) {
+    const objUrl = URL.createObjectURL(file);
+    const v = document.createElement('video');
+    v.preload = 'metadata'; v.muted = true;
+    v.onloadedmetadata = function() {
+      const d = v.duration; URL.revokeObjectURL(objUrl);
+      if (isFinite(d) && d > maxSec) reject(new Error(tAdmin('videoTooLong')));
+      else resolve();
+    };
+    v.onerror = function() { URL.revokeObjectURL(objUrl); reject(new Error('อ่านไฟล์วิดีโอไม่สำเร็จ กรุณาใช้ mp4/webm/mov')); };
+    v.src = objUrl;
+  });
+}
+
+// อัปโหลดวิดีโอ/รูปใหญ่ขึ้น R2 ผ่าน /api/media (helper จาก api-db.js) — คืน url
+async function uploadMediaFile(file) {
+  const fn = (window.DB && DB.uploadMedia) || window.uploadMedia;
+  if (!fn) throw new Error('ระบบอัปโหลดยังไม่พร้อม กรุณารีเฟรชหน้า');
+  const res = await fn(file);
+  return res.url;
+}
+
+// loading state บนปุ่มอัปโหลดของช่องนั้นทันที (disable + สปินเนอร์)
 function handleHeroUpload(input, num) {
   const file = input.files[0];
   if (!file) return;
-  resizeImageFile(file, 1600, 0.8).then(async function(url) {
-    try {
-      const up = {};
-      up['heroImage' + num] = url;
-      await DB.updateSettings(up);
-      loadHeroImages();
-      showToast('อัพโหลดรูปพื้นหลังรูปที่ ' + num + ' สำเร็จ', 'success');
-    } catch(e) { console.error(e); showToast('บันทึกรูปที่ ' + num + ' ไม่สำเร็จ: ' + ((e && e.message) || e), 'alert'); }
-  }).catch(function(e) {
-    showToast('อัพโหลดรูปที่ ' + num + ' ไม่สำเร็จ: ' + ((e && e.message) || e), 'alert');
-  }).finally(function() { input.value = ''; });
+  const btn = input.parentElement ? input.parentElement.querySelector('button.btn-secondary') : null;
+  const oldHtml = btn ? btn.innerHTML : '';
+  const setLoading = function(on) {
+    if (!btn) return;
+    btn.disabled = on; btn.style.opacity = on ? '0.6' : '';
+    btn.innerHTML = on ? ('<i class="fas fa-spinner fa-spin"></i> ' + tAdmin('uploadingNow')) : oldHtml;
+  };
+  const saveUrl = async function(url) {
+    const up = {};
+    up['heroImage' + num] = url;
+    await DB.updateSettings(up);
+    await loadHeroImages();
+    showToast('อัปโหลดสื่อช่องที่ ' + num + ' สำเร็จ', 'success');
+  };
+  const fail = function(prefix) { return function(e) { console.error(e); showToast(prefix + num + ' ไม่สำเร็จ: ' + ((e && e.message) || e), 'alert'); }; };
+  const done = function() { setLoading(false); input.value = ''; };
+
+  if (/^video\//.test(file.type || '')) {
+    // วิดีโอ: เช็คความยาว ≤ 61s ก่อน แล้วอัปขึ้น R2 (base64/D1 รับไม่ไหว)
+    setLoading(true);
+    checkVideoDuration(file, 61)
+      .then(function() { return uploadMediaFile(file); })
+      .then(saveUrl)
+      .catch(fail('อัปโหลดวิดีโอช่องที่ '))
+      .finally(done);
+    return;
+  }
+  // รูปภาพ (≤2MB หลังย่อ): ใช้ flow base64 เดิม เก็บลง settings โดยตรง
+  setLoading(true);
+  resizeImageFile(file, 1600, 0.8).then(saveUrl)
+    .catch(fail('อัปโหลดรูปช่องที่ '))
+    .finally(done);
 }
 
 async function deleteHeroImage(num) {
@@ -2265,11 +2340,20 @@ async function deleteHeroImage(num) {
 async function loadHeroImages() {
   const settings = await DB.getSettings();
   [1, 2, 3, 4, 5].forEach(function(n) {
-    const img = document.getElementById('heroPreview' + n);
-    if (!img) return;
+    let el = document.getElementById('heroPreview' + n);
+    if (!el) return;
     const src = settings['heroImage' + n];
-    if (src) { img.src = src; img.classList.remove('hidden'); }
-    else { img.src = ''; img.classList.add('hidden'); }
+    const wantVideo = !!(src && isVideoMediaUrl(src));
+    // สลับชนิด element ตามประเภทสื่อ: วิดีโอใช้ <video controls muted>, รูปใช้ <img> เหมือนเดิม
+    if (wantVideo !== (el.tagName === 'VIDEO')) {
+      const neu = document.createElement(wantVideo ? 'video' : 'img');
+      neu.id = el.id; neu.className = el.className;
+      neu.setAttribute('style', el.getAttribute('style') || '');
+      if (wantVideo) { neu.controls = true; neu.muted = true; neu.setAttribute('playsinline', ''); neu.preload = 'metadata'; }
+      el.replaceWith(neu); el = neu;
+    }
+    if (src) { el.src = src; el.classList.remove('hidden'); }
+    else { el.removeAttribute('src'); if (el.tagName === 'VIDEO' && el.load) try { el.load(); } catch(e) {} el.classList.add('hidden'); }
   });
 }
 
@@ -2296,7 +2380,8 @@ async function deleteSiteBg() {
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
 }
 
-async function saveSettings() {
+async function saveSettings(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
   const updates = {
     withdrawFee: parseFloat(document.getElementById('settingsWithdrawFee').value) || 1,
@@ -2314,6 +2399,7 @@ async function saveSettings() {
   if (sidebarName) sidebarName.textContent = updates.siteName || 'Binance Gold';
   showToast('บันทึกการตั้งค่าสำเร็จ', 'success');
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 }
 
 // ==================== REALTIME CALLBACKS ====================
@@ -2469,7 +2555,8 @@ function removePackageRow(index) {
   renderPackagesList();
 }
 
-async function savePackages() {
+async function savePackages(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
   const percents = document.querySelectorAll('.package-percent');
   const minutes = document.querySelectorAll('.package-minutes');
@@ -2486,6 +2573,7 @@ async function savePackages() {
   await DB.updateSettings({ tradePackages: JSON.stringify(currentPackages) });
   showToast(tAdmin('pkgSaved'), 'success');
   } catch(e) { console.error(e); showToast((e && e.message) ? e.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่','alert'); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = ''; } }
 }
 
 // ==================== FUND ADMIN (จัดการกองทุน) ====================
@@ -2551,34 +2639,31 @@ async function loadFundInvestments() {
   const now = Date.now();
   if (filter === 'active') funds = funds.filter(f => f.status === 'active' && new Date(f.endTime).getTime() > now);
   else if (filter === 'expired') funds = funds.filter(f => f.status === 'active' && new Date(f.endTime).getTime() <= now);
-  else if (filter === 'win') funds = funds.filter(f => f.status === 'completed' && f.result === 'win');
-  else if (filter === 'lose') funds = funds.filter(f => f.status === 'completed' && f.result === 'lose');
+  else if (filter === 'win') funds = funds.filter(f => f.status === 'completed');
   const tbody = document.getElementById('fundTable');
   if (!tbody) return;
   if (funds.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500 py-8">ไม่มีรายการลงทุน</td></tr>'; return; }
   tbody.innerHTML = funds.map(f => {
     const user = users.find(u => u.id === f.user_id || u.id === f.userId);
     const amount = parseFloat(f.amount) || 0;
-    const profit = amount * (parseFloat(f.percent) || 0) / 100;
-    const profitMax = profit * 1.8; // กำไรจริงสุ่มช่วง base..base*1.8 ตอน settle
+    const profit = amount * (parseFloat(f.percent) || 0) / 100; // กำไรเป๊ะตามเปอร์เซ็นต์ ไม่สุ่ม
     const end = new Date(f.endTime).getTime();
     const expired = now >= end;
     const remain = expired ? 'ครบกำหนด' : fmtFundRemain(end - now);
     let statusHtml, actions;
     if (f.status === 'active') {
-      // แสดงผลที่แอดมินตั้งไว้ล่วงหน้า (รอครบเวลา)
-      const preset = f.result ? (f.result === 'win' ? ' → ชนะ' : ' → ขาดทุน') : '';
+      // ระบบอัตโนมัติเต็มรูปแบบ: กองทุน settle เป็นกำไรเสมอเมื่อครบเวลา แอดมินไม่ต้องกำหนดผล
       statusHtml = expired
-        ? '<span class="badge badge-pending">ครบกำหนด รอผล' + preset + '</span>'
-        : '<span class="badge badge-pending">กำลังลงทุน' + preset + '</span>';
-      const winActive = f.result === 'win' ? ' style="box-shadow:0 0 0 2px #22c55e;"' : '';
-      const loseActive = f.result === 'lose' ? ' style="box-shadow:0 0 0 2px #ef4444;"' : '';
-      actions = `<button class="btn-success text-xs"${winActive} onclick="setFundResult('${f.id}','win')"><i class="fas fa-trophy"></i> ชนะ</button><button class="btn-danger text-xs"${loseActive} onclick="setFundResult('${f.id}','lose')"><i class="fas fa-times-circle"></i> ขาดทุน</button>`;
+        ? '<span class="badge badge-pending">ครบกำหนด กำลังจ่ายอัตโนมัติ</span>'
+        : '<span class="badge badge-pending">กำลังลงทุน</span>';
+      actions = expired
+        ? `<button class="btn-success text-xs" onclick="settleFundNow('${f.id}')"><i class="fas fa-bolt"></i> จ่ายกำไรตอนนี้</button>`
+        : '<span class="text-xs text-gray-500">อัตโนมัติ</span>';
     } else {
-      statusHtml = f.result === 'win' ? '<span class="badge badge-approved">ชนะ</span>' : '<span class="badge badge-rejected">ขาดทุน</span>';
+      statusHtml = '<span class="badge badge-approved">กำไร</span>';
       actions = '<span class="text-xs text-gray-500">เสร็จสิ้น</span>';
     }
-    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')} ${uidBadge(userCodeOf(f, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">${f.status === 'completed' ? (f.result === 'win' ? '+$' + (parseFloat(f.profit) || 0).toFixed(2) : '-$' + Math.abs(parseFloat(f.profit) || 0).toFixed(2)) : '+' + f.percent + '% ($' + profit.toLocaleString() + '–$' + profitMax.toLocaleString() + ')'}</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
+    return `<tr><td class="font-mono text-xs text-gray-400">${f.id.substring(0, 8)}</td><td><div class="text-white font-bold">${user ? user.name : (f.username || 'Unknown')} ${uidBadge(userCodeOf(f, user))}</div><div class="text-xs text-gray-500">${user ? user.phone : '-'}</div></td><td class="text-white font-bold">$${amount.toLocaleString()}</td><td class="text-green-400">${f.status === 'completed' ? '+$' + (parseFloat(f.profit) || 0).toFixed(2) : '+' + f.percent + '% ($' + profit.toLocaleString() + ')'}</td><td class="text-white">${f.days} วัน</td><td class="text-yellow-400 text-xs">${f.status === 'active' ? remain : '-'}</td><td>${statusHtml}</td><td><div class="action-btns">${actions}</div></td></tr>`;
   }).join('');
 }
 
@@ -2588,16 +2673,16 @@ function fmtFundRemain(ms) {
   return d + 'วัน ' + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
 
-// แอดมินตั้งผลล่วงหน้า — ระบบจะแสดงผลและจ่ายเงินอัตโนมัติเมื่อครบเวลาที่กำหนด
-async function setFundResult(fundId, result) {
-  try { const out=await BinanceGoldAPI.fetch('/api/admin/funds/'+encodeURIComponent(fundId)+'/set-result',{method:'POST',body:{result}}); const f=out.fund; showToast('กำหนดผล: '+(result==='win'?'ชนะ':'ขาดทุน')+(Date.now()>=new Date(f.endTime).getTime()?' — ครบเวลาแล้ว':' แล้ว'),'success'); loadFundInvestments(); loadDashboard(); updateBadges(); }
-  catch(e){showToast('ไม่สามารถกำหนดผลได้','alert');}
+// ปุ่ม "จ่ายกำไรตอนนี้" (ทางเลือก) — ผลเป็นกำไรเสมอ (win) ตามเปอร์เซ็นต์เป๊ะ
+async function settleFundNow(fundId) {
+  try { await BinanceGoldAPI.fetch('/api/admin/funds/'+encodeURIComponent(fundId)+'/settle',{method:'POST',body:{}}); showToast('จ่ายกำไรกองทุนสำเร็จ','success'); loadFundInvestments(); loadDashboard(); updateBadges(); }
+  catch(e){showToast('ไม่สามารถปิดผลกองทุนได้','alert');}
 }
 
-// ปิดผลกองทุนที่ครบเวลาและมีผลตั้งไว้แล้ว (ทุกสมาชิก) — คืนเงินต้น+กำไรถ้าชนะ
+// ปิดผลกองทุนที่ครบเวลา (ทุกสมาชิก) — กำไรเสมอ คืนเงินต้น+กำไร
 async function processDueFundSettlements() {
   const funds = await getFundInvestments(); const now=Date.now();
-  for(const f of funds){ if(f.status!=='active'||!f.result||!f.endTime||new Date(f.endTime).getTime()>now) continue;
+  for(const f of funds){ if(f.status!=='active'||!f.endTime||new Date(f.endTime).getTime()>now) continue;
     try { await BinanceGoldAPI.fetch('/api/admin/funds/'+encodeURIComponent(f.id)+'/settle',{method:'POST',body:{}}); } catch(e) { console.warn('fund settlement deferred',e); }
   }
 }

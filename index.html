@@ -123,7 +123,7 @@
     getAdmins: function() { return Promise.resolve(LocalDB.getAdmins()); },
     createAdmin: function(a) { var arr = LocalDB.getAdmins(); arr.push(a); LocalDB.setAdmins(arr); return Promise.resolve(a); },
     deleteAdmin: function(id) { var arr = LocalDB.getAdmins().filter(function(a){return a.id!==id}); LocalDB.setAdmins(arr); return Promise.resolve(); },
-    getSettings: function() { var s = LocalDB.getSettings(); if(!s.siteName)s={siteName:'Binance Gold',site_name:'Binance Gold',welcomeText:'เริ่มปั่นพอร์ตกันเลย',welcome_text:'เริ่มปั่นพอร์ตกันเลย',aboutUs:'ยินดีต้อนรับสู่ Binance Gold',about_us:'ยินดีต้อนรับสู่ Binance Gold',withdrawFee:1,withdraw_fee:1,minWithdraw:10,min_withdraw:10,p2pAddress:'TLrt3947ScuuCguGRsKibuWvp9iZwmixXj',p2p_address:'TLrt3947ScuuCguGRsKibuWvp9iZwmixXj',p2pWithdrawFee:1,p2p_withdraw_fee:1,p2pMinWithdraw:10,p2p_min_withdraw:10,maintenance:false,packages:'[{"percent":10,"amount":100},{"percent":30,"amount":1000},{"percent":40,"amount":2000},{"percent":60,"amount":4000},{"percent":70,"amount":6000},{"percent":80,"amount":10000}]',packages_json:'[{"percent":10,"amount":100},{"percent":30,"amount":1000},{"percent":40,"amount":2000},{"percent":60,"amount":4000},{"percent":70,"amount":6000},{"percent":80,"amount":10000}]',autoTradeEnabled:false,auto_trade_enabled:false,autoWinRate:50,auto_win_rate:50,autoTradeDelay:5,auto_trade_delay:5,autoTradeMode:'random',auto_trade_mode:'random'}; return Promise.resolve(s); },
+    getSettings: function() { var s = LocalDB.getSettings(); if(!s.siteName)s={siteName:'Binance Gold',site_name:'Binance Gold',welcomeText:'',welcome_text:'',aboutUs:'ยินดีต้อนรับสู่ Binance Gold',about_us:'ยินดีต้อนรับสู่ Binance Gold',withdrawFee:1,withdraw_fee:1,minWithdraw:10,min_withdraw:10,p2pAddress:'TLrt3947ScuuCguGRsKibuWvp9iZwmixXj',p2p_address:'TLrt3947ScuuCguGRsKibuWvp9iZwmixXj',p2pWithdrawFee:1,p2p_withdraw_fee:1,p2pMinWithdraw:10,p2p_min_withdraw:10,maintenance:false,packages:'[{"percent":10,"amount":100},{"percent":30,"amount":1000},{"percent":40,"amount":2000},{"percent":60,"amount":4000},{"percent":70,"amount":6000},{"percent":80,"amount":10000}]',packages_json:'[{"percent":10,"amount":100},{"percent":30,"amount":1000},{"percent":40,"amount":2000},{"percent":60,"amount":4000},{"percent":70,"amount":6000},{"percent":80,"amount":10000}]',autoTradeEnabled:false,auto_trade_enabled:false,autoWinRate:50,auto_win_rate:50,autoTradeDelay:5,auto_trade_delay:5,autoTradeMode:'random',auto_trade_mode:'random'}; return Promise.resolve(s); },
     updateSettings: function(up) { var s = Object.assign({}, LocalDB.getSettings(), up); LocalDB.setSettings(s); return Promise.resolve(s); },
     uploadFile: function() { return Promise.resolve(null); }
   };
@@ -228,7 +228,9 @@ html[data-theme="dark"] .logout-confirm-btn { background: #f0b90b; color: #11111
 .status-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
 .status-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
 .status-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-.vip-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: linear-gradient(135deg, #f0b90b, #d4a003); color: #0f172a; }
+.vip-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #2b323a; color: #f5f5f5; border: 1px solid #3a424c; }
+.copy-id-btn { background: #2b323a; border: 1px solid #3a424c; color: #f5f5f5; border-radius: 6px; padding: 1px 8px; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+.copy-id-btn:hover { background: #363f49; }
 .nav-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #111; margin-bottom: 8px; border: 1px solid transparent; }
 .nav-item:hover { background: #1a1a1a; border-color: #eab308; }
 .section-card { background: #111; border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid #1a1a1a; }
@@ -252,7 +254,14 @@ html[data-theme="dark"] .logout-confirm-btn { background: #f0b90b; color: #11111
 @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .trade-detail-row { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-top: 4px; }
 .trade-detail-row span { color: #e5e5e5; }
+#heroBanner { min-height: 260px; }
+#heroBanner > .relative.z-10 { min-height: 260px; display: flex; flex-direction: column; justify-content: center; }
+@media (max-width: 640px) {
+#heroBanner { min-height: 190px; }
+#heroBanner > .relative.z-10 { min-height: 190px; padding: 20px; }
+}
 .hero-bg-slide { width: 20%; height: 100%; flex-shrink: 0; background-size: cover; background-position: center; position: relative; }
+.hero-bg-slide video.hero-bg-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .hero-bg-slide.has-image::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,0,0,0.45), rgba(0,0,0,0.15)); }
 .hero-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.45); border: none; cursor: pointer; transition: all 0.3s; padding: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
 .hero-dot.active { background: #ffffff; width: 20px; border-radius: 4px; }
@@ -261,10 +270,10 @@ html[data-theme="dark"] .logout-confirm-btn { background: #f0b90b; color: #11111
 .settings-avatar-wrap .camera-icon { position: absolute; bottom: 0; right: 0; background: #eab308; color: #000; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid #050505; cursor: pointer; }
 /* ===== FUND (กองทุน) ===== */
 .fund-summary-card { background: linear-gradient(145deg, #141414, #0d0d0d); border: 1px solid #2a2a2a; border-radius: 24px; padding: 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(234,179,8,0.08); }
-.fund-donut-wrap { position: relative; width: 150px; height: 150px; flex-shrink: 0; }
-.fund-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 18px; }
-.fund-donut-center .amt { font-size: 20px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; max-width: 100%; white-space: nowrap; overflow: hidden; }
-.fund-donut-center .lbl { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+.fund-donut-wrap { position: relative; width: 170px; height: 170px; flex-shrink: 0; }
+.fund-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 14px; }
+.fund-donut-center .amt { font-size: 20px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; max-width: 100%; white-space: nowrap; overflow: hidden; line-height: 1.2; }
+.fund-donut-center .lbl { font-size: 14px; font-weight: 600; color: #cbd5e1; margin-top: 4px; white-space: nowrap; }
 .fund-legend { flex: 1; min-width: 0; }
 .fund-legend-title { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 12px; }
 .fund-legend-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 13px; }
@@ -276,7 +285,7 @@ html[data-theme="dark"] .logout-confirm-btn { background: #f0b90b; color: #11111
 .fund-packages { -ms-overflow-style: none; scrollbar-width: none; }
 .fund-pkg-card { background: linear-gradient(160deg, #161616, #0e0e0e); border: 1px solid #262626; border-radius: 20px; padding: 18px 16px; min-width: 132px; flex-shrink: 0; text-align: center; transition: all 0.2s; }
 .fund-pkg-card:hover { border-color: #eab308; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(234,179,8,0.12); }
-.fund-pkg-amount { font-size: 20px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+.fund-pkg-amount { font-size: 16px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
 .fund-pkg-pct { font-size: 14px; color: #22c55e; font-weight: 700; margin-top: 6px; }
 .fund-pkg-days { font-size: 12px; color: #94a3b8; margin-top: 2px; }
 .fund-join-btn { margin-top: 12px; background: linear-gradient(135deg, #eab308, #f97316); color: #000; border: none; border-radius: 12px; padding: 8px 22px; font-weight: 800; font-size: 13px; cursor: pointer; transition: all 0.2s; width: 100%; }
@@ -294,7 +303,7 @@ html[data-theme="dark"] .logout-confirm-btn { background: #f0b90b; color: #11111
 .fund-ring-wrap svg { transform: rotate(-90deg); }
 .fund-ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; line-height: 1.2; text-align: center; font-variant-numeric: tabular-nums; }
 .fund-item-info { flex: 1; text-align: right; }
-.fund-item-amt { font-size: 18px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+.fund-item-amt { font-size: 15px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
 .fund-item-sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
 .fund-item-total { font-size: 14px; font-weight: 800; color: #eab308; margin-top: 3px; font-variant-numeric: tabular-nums; }
 .fund-empty { text-align: center; color: #6b7280; padding: 48px 0; font-size: 14px; }
@@ -325,8 +334,8 @@ html[data-theme="dark"] .logout-confirm-btn { background: #f0b90b; color: #11111
 .tord-badge-sell { background: #dc2626; }
 
 /* ===== TRADE RUNNING MODAL (วงแหวนนับถอยหลัง) ===== */
-.trun-ring-wrap { position: relative; width: 180px; height: 180px; margin: 0 auto; }
-.trun-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+.trun-ring-wrap { position: relative; width: 150px; height: 150px; margin: 0 auto; }
+.trun-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; padding: 14px; overflow: hidden; text-align: center; }
 .trun-progress { height: 8px; background: #262626; border-radius: 999px; overflow: hidden; margin-top: 20px; }
 .trun-progress-bar { height: 100%; width: 0%; background: #22c55e; border-radius: 999px; transition: width 1s linear, background 0.3s; }
 </style>
@@ -416,6 +425,9 @@ html[data-theme="light"] .chat-message.sent { background: #eab308; color: #0f172
 html[data-theme="light"] .fund-summary-card { background: #ffffff; border-color: #e5e5de; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
 html[data-theme="light"] .fund-donut-center .amt { color: #111827; }
 html[data-theme="light"] .fund-donut-center .lbl { color: #6b7280; }
+html[data-theme="light"] .vip-badge { background: #ffffff; color: #1f2937; border-color: #e5e5de; }
+html[data-theme="light"] .copy-id-btn { background: #ffffff; color: #1f2937; border-color: #d4d4cc; }
+html[data-theme="light"] .copy-id-btn:hover { background: #f4f4f0; }
 html[data-theme="light"] .fund-legend-title { color: #111827; }
 html[data-theme="light"] .fund-legend-row .l { color: #4b5563; }
 html[data-theme="light"] .fund-pkg-card { background: #ffffff; border-color: #e5e5de; }
@@ -482,6 +494,8 @@ html[data-theme="light"] { color-scheme: light; }
 <button class="lang-btn" id="langBtn" onclick="toggleLanguage()">
 <span class="flag" id="langFlag">🇹🇭</span><span id="langText">TH</span>
 </button>
+<!-- ไอคอนฝ่ายบริการ: สมาชิก = แชทบัญชีตัวเอง, ผู้เยี่ยมชม (ไม่ล็อกอิน) = guest chat -->
+<button class="theme-btn" id="supportChatBtn" onclick="openSupportChat()" title="ฝ่ายบริการลูกค้า" aria-label="ฝ่ายบริการลูกค้า"><i class="fas fa-headset"></i></button>
 </div>
 </div>
 
@@ -500,11 +514,7 @@ html[data-theme="light"] { color-scheme: light; }
 <div id="heroLogoContainer" style="display:none;margin-bottom:16px;">
 <img id="heroLogo" src="" alt="Logo" style="width:100px;height:100px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
 </div>
-<p class="text-black/80 text-lg font-medium mb-6" id="homeWelcomeText">เริ่มปั่นพอร์ตกันเลย</p>
-<button class="bg-black text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-900 transition flex items-center gap-3 shadow-lg" onclick="showTab('market', document.querySelector('[data-tab=market]'))">
-<span id="homeBtnText">เริ่มต้นใช้งาน</span>
-<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-</button>
+<p class="text-black/80 text-lg font-medium mb-6" id="homeWelcomeText" style="display:none;"></p>
 </div>
 <div id="heroDots" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:6px;">
 <button class="hero-dot active" onclick="goHeroSlide(0)"></button>
@@ -517,7 +527,13 @@ html[data-theme="light"] { color-scheme: light; }
 <div class="mb-6">
 <div class="flex justify-between items-center mb-4">
 <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-yellow-500">🔥</span> <span id="hotMarketTitle">ตลาดยอดนิยม</span></h2>
+<div class="flex items-center gap-3">
 <span class="text-xs text-gray-500" id="lastUpdate">-</span>
+<button class="bg-black text-white px-5 py-2.5 rounded-full font-bold text-base hover:bg-gray-900 transition flex items-center gap-2 shadow-lg" onclick="showTab('market', document.querySelector('[data-tab=market]'))">
+<span id="homeBtnText">เริ่มต้นใช้งาน</span>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+</button>
+</div>
 </div>
 <div class="space-y-3" id="hotMarkets">
 <div class="loading-skeleton h-16 w-full rounded-2xl"></div>
@@ -577,13 +593,13 @@ html[data-theme="light"] { color-scheme: light; }
 <div id="tradeContent" class="hidden">
 <div class="p-4 border-b border-[#1a1a1a] flex justify-between items-center bg-[#050505]">
 <div class="flex items-center gap-2">
-<span class="font-bold text-lg" id="activeSymbol">BTC/USDT</span>
+<span class="font-bold text-lg" id="activeSymbol">XAU/USD</span>
 <span class="green text-sm price-display" id="activePrice">$0.00</span>
 </div>
 <button class="text-gray-400 hover:text-white transition text-sm" onclick="refreshChart()">Refresh</button>
 </div>
 <div class="chart-container" id="chartContainer">
-<iframe id="tvChart" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=BINANCE:BTCUSDT&interval=15&theme=dark&style=1&timezone=Asia/Bangkok"></iframe>
+<iframe id="tvChart" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=OANDA:XAUUSD&interval=15&theme=dark&style=1&timezone=Asia/Bangkok"></iframe>
 </div>
 <div class="p-4">
 <div class="grid grid-cols-2 gap-4">
@@ -614,22 +630,22 @@ html[data-theme="light"] { color-scheme: light; }
 <div id="fundContent" class="hidden">
 <div class="flex items-center justify-center gap-2 mb-4 pt-2">
 <i class="fas fa-chart-column text-yellow-500 text-xl"></i>
-<h1 class="text-lg font-bold text-white" id="fundTitle">การลงทุนเพื่อหารายได้</h1>
+<h1 class="text-lg font-bold text-white" id="fundTitle">การลงทุน S&P 500</h1>
 </div>
 
 <!-- สรุปพอร์ตกองทุน -->
 <div class="fund-summary-card mb-5">
 <div class="fund-donut-wrap">
-<svg width="150" height="150" viewBox="0 0 150 150">
-<circle cx="75" cy="75" r="60" fill="none" stroke="#1f2937" stroke-width="14"></circle>
-<circle id="fundDonutBlue" cx="75" cy="75" r="60" fill="none" stroke="#3b82f6" stroke-width="14" stroke-dasharray="0 377" transform="rotate(-90 75 75)"></circle>
-<circle id="fundDonutGreen" cx="75" cy="75" r="60" fill="none" stroke="#22c55e" stroke-width="14" stroke-dasharray="0 377" transform="rotate(-90 75 75)"></circle>
-<circle id="fundDonutOrange" cx="75" cy="75" r="60" fill="none" stroke="#f59e0b" stroke-width="14" stroke-dasharray="0 377" transform="rotate(-90 75 75)"></circle>
+<svg width="170" height="170" viewBox="0 0 150 150">
+<circle cx="75" cy="75" r="60" fill="none" stroke="#1f2937" stroke-width="8"></circle>
+<circle id="fundDonutBlue" cx="75" cy="75" r="60" fill="none" stroke="#3b82f6" stroke-width="8" stroke-dasharray="0 377" transform="rotate(-90 75 75)"></circle>
+<circle id="fundDonutGreen" cx="75" cy="75" r="60" fill="none" stroke="#22c55e" stroke-width="8" stroke-dasharray="0 377" transform="rotate(-90 75 75)"></circle>
+<circle id="fundDonutOrange" cx="75" cy="75" r="60" fill="none" stroke="#f59e0b" stroke-width="8" stroke-dasharray="0 377" transform="rotate(-90 75 75)"></circle>
 </svg>
 <div class="fund-donut-center"><div class="amt" id="fundTotalBalance">$0.00</div><div class="lbl" id="fundBalanceLabel">ยอดเงินคงเหลือ</div></div>
 </div>
 <div class="fund-legend">
-<div class="fund-legend-title" id="fundSummaryTitle">การลงทุนเพื่อหารายได้</div>
+<div class="fund-legend-title" id="fundSummaryTitle">กองทุน S&P500</div>
 <div class="fund-legend-row"><div class="l"><span class="fund-dot" style="background:#3b82f6;"></span><span id="fundLegendInvested" data-i18n="fundInvestAmount">จำนวนเงินลงทุน</span></div><div class="v text-white" id="fundInvestedVal">$0.00</div></div>
 <div class="fund-legend-row"><div class="l"><span class="fund-dot" style="background:#22c55e;"></span><span id="fundLegendProfit">กำไรรวม</span></div><div class="v text-white" id="fundProfitVal">$0.00</div></div>
 <div class="fund-legend-row"><div class="l"><span class="fund-dot" style="background:#f59e0b;"></span><span id="fundLegendActive">กำลังลงทุน</span></div><div class="v" style="color:#f59e0b;" id="fundActiveVal">$0.00</div></div>
@@ -692,6 +708,10 @@ html[data-theme="light"] { color-scheme: light; }
 <div class="flex-1">
 <h2 class="text-lg font-bold text-white" id="profileName">-</h2>
 <div class="text-sm text-gray-400" id="profilePhone">-</div>
+<div class="text-sm text-gray-400 items-center gap-2 mt-1" id="profileUserIdRow" style="display:none;">
+<span>ID <span id="profileUserId" class="text-yellow-400 font-bold"></span></span>
+<button type="button" class="copy-id-btn" id="copyBtn" onclick="copyUserId()">คัดลอก</button>
+</div>
 <div class="flex gap-2 mt-2">
 <span class="vip-badge" id="profileVip">VIP 1</span>
 <span class="kyc-status-badge kyc-none" id="profileKyc">ยังไม่ยืนยัน</span>
@@ -701,12 +721,12 @@ html[data-theme="light"] { color-scheme: light; }
 </div>
 <div class="bg-[#111] p-6 rounded-3xl border border-[#1a1a1a] mb-6">
 <div class="flex items-center gap-2 mb-1">
-<span class="text-gray-400 text-sm" id="totalBalanceLabel">ยอดเงินรวม (USDT)</span>
+<span class="text-gray-400 text-sm" id="totalBalanceLabel">ยอดเงินคงเหลือ (USDT)</span>
 <button type="button" id="balanceEye" onclick="toggleBalanceVisibility()" class="text-gray-400 hover:text-white transition" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;">
 <i class="fas fa-eye" id="balanceEyeIcon"></i>
 </button>
 </div>
-<div class="text-4xl font-bold price-display text-white" id="totalBalance">$0.00</div>
+<div class="text-3xl font-bold price-display text-white" id="totalBalance">$0.00</div>
 <div class="text-gray-500 text-sm mt-1" id="totalBalanceThb">≈ 0.00 THB</div>
 <div class="mt-5 flex gap-3">
 <button class="flex-1 bg-yellow-500 text-black py-3.5 rounded-2xl font-bold hover:bg-yellow-400 transition flex items-center justify-center gap-2" onclick="openModal('depositModal')" id="depositBtn"><i class="fas fa-arrow-down"></i>ฝากเงิน</button>
@@ -896,7 +916,7 @@ QR Code
 <label class="text-sm mb-2 block text-gray-300">จำนวนที่ต้องการถอน (USDT)</label>
 <input id="p2pWithdrawAmount" placeholder="0.00" type="number" min="0" step="0.01"/>
 </div>
-<button class="w-full bg-white text-black py-4 rounded-2xl font-bold shadow-lg hover:bg-gray-100 transition mt-2" onclick="submitP2PWithdraw()">ยืนยันการถอนเงิน</button>
+<button class="w-full bg-white text-black py-4 rounded-2xl font-bold shadow-lg hover:bg-gray-100 transition mt-2" onclick="submitP2PWithdraw()" id="p2pWithdrawSubmitBtn">ยืนยันการถอนเงิน</button>
 </div>
 </div>
 </div>
@@ -1073,9 +1093,9 @@ QR Code
 <button class="absolute top-4 right-5 text-gray-400 hover:text-white transition text-xl" onclick="closeTradeRunning()">✕</button>
 <h2 class="text-lg font-bold text-white text-center mb-6" id="runningTitle">กำลังดำเนินการเทรด</h2>
 <div class="trun-ring-wrap">
-<svg width="180" height="180" viewBox="0 0 180 180">
-<circle cx="90" cy="90" r="72" fill="none" stroke="#1f2937" stroke-width="12"></circle>
-<circle id="trunRing" cx="90" cy="90" r="72" fill="none" stroke="#f59e0b" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 452.4" transform="rotate(-90 90 90)"></circle>
+<svg width="150" height="150" viewBox="0 0 180 180">
+<circle cx="90" cy="90" r="72" fill="none" stroke="#1f2937" stroke-width="7"></circle>
+<circle id="trunRing" cx="90" cy="90" r="72" fill="none" stroke="#f59e0b" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 452.4" transform="rotate(-90 90 90)"></circle>
 </svg>
 <div class="trun-center" id="trunCenter">59s</div>
 </div>
@@ -1139,7 +1159,7 @@ QR Code
 // ==================== DATA & CONFIG ====================
 let currentLang = localStorage.getItem('bg_lang') || 'th';
 let currentUser = null;
-let currentSymbol = 'BTCUSDT';
+let currentSymbol = 'XAUUSD'; // ค่าเริ่มต้นหน้าซื้อขาย: ทองคำ XAU/USD
 let marketPrices = {};
 let priceUpdateInterval = null;
 let priceStream = null;        // Binance WebSocket
@@ -1272,7 +1292,7 @@ function showTab(tabId, btn) {
   if (tabId === 'fund') loadFundData();
 }
 
-function openModal(id) { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; if (id === 'chatModal') { renderChat(); startChatPolling(); } }
+function openModal(id) { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; if (id === 'chatModal') { if (typeof guestChatMode !== 'undefined') guestChatMode = !currentUser; renderChat(); startChatPolling(); } }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); document.body.style.overflow = ''; if (id === 'chatModal') stopChatPolling(); }
 
 // ==================== 15 LANGUAGES ====================
@@ -1845,18 +1865,47 @@ function filterMarket(cat) {
   renderMarkets(cat); 
 }
 
+function getChartTheme() {
+  try {
+    if (typeof getBgThemeMode === 'function') return getBgThemeMode() === 'light' ? 'light' : 'dark';
+  } catch (e) {}
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+
+function buildChartUrl(m) {
+  return `https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${m.tvSymbol}&interval=15&theme=${getChartTheme()}&style=1&timezone=Asia/Bangkok`;
+}
+
+// อัปเดตธีมกราฟ TradingView ตามโหมดสว่าง/มืด (ไม่แตะ logic ราคา)
+function updateChartTheme() {
+  const m = MARKETS.find(x => x.symbol === currentSymbol);
+  const frame = document.getElementById('tvChart');
+  if (m && frame) frame.src = buildChartUrl(m);
+}
+
 function selectSymbol(sym) {
   const m = MARKETS.find(x => x.symbol === sym);
   if (!m) return;
   currentSymbol = sym;
-  document.getElementById('activeSymbol').textContent = m.name + '/USDT';
+  document.getElementById('activeSymbol').textContent = m.name.indexOf('/') >= 0 ? m.name : m.name + '/USDT';
   const priceData = marketPrices[sym] || { price: m.basePrice };
   document.getElementById('activePrice').textContent = '$' + priceData.price.toLocaleString();
-  document.getElementById('tvChart').src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview&symbol=${m.tvSymbol}&interval=15&theme=dark&style=1&timezone=Asia/Bangkok`;
+  document.getElementById('tvChart').src = buildChartUrl(m);
   showTab('trade', document.querySelector('[data-tab="trade"]'));
 }
 
 function refreshChart() { selectSymbol(currentSymbol); }
+
+// ผูกกราฟเข้ากับ theme toggle: เมื่อ data-theme เปลี่ยน ให้โหลด widget ใหม่ด้วยธีมที่ตรงกัน
+(function () {
+  function sync() { try { updateChartTheme(); } catch (e) {} }
+  document.addEventListener('DOMContentLoaded', sync);
+  try {
+    new MutationObserver(function (muts) {
+      for (const mu of muts) { if (mu.attributeName === 'data-theme') { sync(); break; } }
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  } catch (e) {}
+})();
 
 // ==================== TRADE (กดซื้อ/ขาย → ใส่จำนวนเงิน + เลือกแพ็คเกจ → ยืนยัน → นับถอยหลัง) ====================
 let tradeOrderType = 'buy';
@@ -1864,6 +1913,7 @@ let tradeOrderPkgs = [];
 let tradeOrderSelected = -1;
 let trunTimer = null;
 let trunTradeId = null;
+let trunCache = null; // cache เทรดที่กำลังนับถอยหลัง — ไม่เรียก API ทุกวินาที ดึงใหม่เฉพาะตอนเริ่ม/ใกล้หมดเวลา
 const TRUN_C = 2 * Math.PI * 72; // เส้นรอบวงแหวน r=72
 
 async function openTradeOrder(type) {
@@ -1908,6 +1958,21 @@ function updateTradeOrderSummary() {
   document.getElementById('tordPeriod').textContent = p.minutes + 'm';
 }
 
+// ปิดปุ่มกันกดซ้ำ + แสดง feedback ทันทีที่กด (loading state ฝั่งสมาชิก)
+function setBtnLoading(btn, on) {
+  if (typeof btn === 'string') btn = document.getElementById(btn);
+  if (!btn) return;
+  if (on) {
+    if (btn.disabled) return;
+    btn.dataset.origText = btn.textContent;
+    btn.disabled = true; btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+    btn.textContent = currentLang === 'th' ? 'กำลังดำเนินการ...' : 'Processing...';
+  } else {
+    btn.disabled = false; btn.style.opacity = ''; btn.style.pointerEvents = '';
+    if (btn.dataset.origText) btn.textContent = btn.dataset.origText;
+  }
+}
+
 async function confirmTradeOrder() {
   if (!currentUser) { showToast(t('loginError')); return; }
   const amount = parseFloat(document.getElementById('tradeOrderAmount').value);
@@ -1944,8 +2009,11 @@ async function confirmTradeOrder() {
   // ผลอัตโนมัติรายสมาชิกถูกกำหนดฝั่ง Server/Database แล้ว ห้ามให้ Browser เป็น Source of Truth
   delete trade.result;
   delete trade.resultSetAt;
-  await DB.createTrade(trade);
-  currentUser = await DB.getCurrentUser();
+  setBtnLoading('confirmBtn', true);
+  try {
+    await DB.createTrade(trade);
+    currentUser = await DB.getCurrentUser();
+  } finally { setBtnLoading('confirmBtn', false); }
 
   showToast(t('tradePlaced'));
   closeModal('tradeOrderModal');
@@ -1957,6 +2025,7 @@ async function confirmTradeOrder() {
 // ---------- Modal นับถอยหลัง + แสดงผลอัตโนมัติเมื่อครบเวลา ----------
 async function openTradeRunning(tradeId) {
   trunTradeId = tradeId;
+  trunCache = null;
   const trades = await DB.getTradesByUser(currentUser.id);
   const tr = trades.find(x => x.id === tradeId);
   if (!tr) return;
@@ -1970,14 +2039,20 @@ async function openTradeRunning(tradeId) {
   openModal('tradeRunningModal');
   await tickTradeRunning();
   if (trunTimer) clearInterval(trunTimer);
-  trunTimer = setInterval(function(){ if(!document.hidden) tickTradeRunning(); }, 2500);
+  // tick ทุก 1 วินาที — เวลาคำนวณจาก endTime - Date.now() ทุกครั้ง จึงไม่สะสมคลาดเคลื่อนแม้แท็บไม่ active
+  trunTimer = setInterval(tickTradeRunning, 1000);
 }
 
 async function tickTradeRunning() {
   if (!trunTradeId || !currentUser) return;
-  const trades = await DB.getTradesByUser(currentUser.id);
-  const tr = trades.find(x => x.id === trunTradeId);
-  if (!tr) { closeTradeRunning(); return; }
+  let tr = (trunCache && trunCache.id === trunTradeId) ? trunCache : null;
+  // ดึงข้อมูลจาก server เฉพาะตอนเปิดครั้งแรกหรือใกล้/เลยเวลาสิ้นสุด (เช็คผล settle) — วินาทีอื่นนับจาก cache
+  if (!tr || Date.now() >= new Date(tr.endTime).getTime() - 1100) {
+    const trades = await DB.getTradesByUser(currentUser.id);
+    tr = trades.find(x => x.id === trunTradeId);
+    if (!tr) { closeTradeRunning(); return; }
+    trunCache = tr;
+  }
 
   // ราคาปัจจุบัน (live จากตลาด)
   const cur = (marketPrices[tr.symbol] && marketPrices[tr.symbol].price) || parseFloat(tr.price);
@@ -1997,7 +2072,8 @@ async function tickTradeRunning() {
   const pf = document.getElementById('trunProfit');
   const center = document.getElementById('trunCenter');
 
-  if (tr.status === 'pending') {
+  // แสดงผลแพ้/ชนะได้เฉพาะเมื่อเวลาเหลือ 0 เท่านั้น — ถ้า admin ปิดผลก่อนเวลา ยังนับถอยหลังต่อจนครบ
+  if (remain > 0 || tr.status === 'pending') {
     if (remain > 0) {
       center.textContent = Math.ceil(remain / 1000) + 's';
       center.style.color = '#fff';
@@ -2028,8 +2104,9 @@ async function tickTradeRunning() {
     ring.setAttribute('stroke', win ? '#22c55e' : '#ef4444');
     prog.style.width = '100%';
     prog.style.background = win ? '#22c55e' : '#ef4444';
-    pf.textContent = t(win ? 'winTxt' : 'loseTxt') + ' ' + (win ? '+' : '-') + '$' + profit.toFixed(2);
+    pf.textContent = (win ? '+' : '-') + '$' + profit.toFixed(2);
     pf.style.color = win ? '#22c55e' : '#ef4444';
+    trunCache = null;
     if (trunTimer) { clearInterval(trunTimer); trunTimer = null; }
   }
 }
@@ -2037,6 +2114,7 @@ async function tickTradeRunning() {
 function closeTradeRunning() {
   if (trunTimer) { clearInterval(trunTimer); trunTimer = null; }
   trunTradeId = null;
+  trunCache = null;
   closeModal('tradeRunningModal');
   if (currentUser) { loadTradeHistory(); loadWalletData(); }
 }
@@ -2099,8 +2177,8 @@ async function loadTradeHistory() {
   container.innerHTML = trades.map(trd => {
     const resultClass = (trd.status === 'closed') ? (trd.result === 'win' ? 'trade-win' : trd.result === 'lose' ? 'trade-lose' : 'trade-pending') : 'trade-pending';
     let resultText;
-    if (trd.status === 'closed' && trd.result === 'win') resultText = t('winTxt') + ' +' + (trd.profit || 0).toFixed(2) + ' USDT';
-    else if (trd.status === 'closed' && trd.result === 'lose') resultText = t('loseTxt') + ' ' + Math.abs(trd.profit || 0).toFixed(2) + ' USDT';
+    if (trd.status === 'closed' && trd.result === 'win') resultText = '+' + (trd.profit || 0).toFixed(2) + ' USDT';
+    else if (trd.status === 'closed' && trd.result === 'lose') resultText = '-' + Math.abs(trd.profit || 0).toFixed(2) + ' USDT';
     else if (trd.endTime) {
       const remain = Math.max(0, new Date(trd.endTime).getTime() - Date.now());
       resultText = remain > 0 ? ('⏳ ' + Math.floor(remain / 60000) + 'm ' + Math.floor((remain % 60000) / 1000) + 's') : ('⏳ ' + t('processingTxt'));
@@ -2162,7 +2240,7 @@ async function showTradeDetail(tradeId) {
       <div class="flex justify-between"><span class="text-gray-400">${currentLang === 'th' ? 'แพ็คเกจ' : 'Package'}</span><span class="font-bold text-yellow-400">${pkgText}</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${currentLang === 'th' ? 'จำนวน' : 'Amount'}</span><span class="font-bold text-white">$${parseFloat(t.amount).toFixed(2)} USDT</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${currentLang === 'th' ? 'ราคาเข้า' : 'Entry Price'}</span><span class="font-bold text-white">$${parseFloat(t.price).toLocaleString()}</span></div>
-      <div class="flex justify-between"><span class="text-gray-400">${currentLang === 'th' ? 'ผล' : 'Result'}</span><span class="font-bold ${resultClass}">${resultText} ${isClosed && t.result ? (t.profit >= 0 ? '+' : '') + parseFloat(t.profit).toFixed(2) + ' USDT' : ''}</span></div>
+      <div class="flex justify-between"><span class="text-gray-400">${currentLang === 'th' ? 'ผล' : 'Result'}</span><span class="font-bold ${resultClass}">${isClosed && t.result ? (t.profit >= 0 ? '+' : '') + parseFloat(t.profit).toFixed(2) + ' USDT' : resultText}</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${currentLang === 'th' ? 'สถานะ' : 'Status'}</span><span class="font-bold ${t.status === 'closed' ? 'text-gray-400' : 'text-yellow-400'}">${t.status === 'closed' ? (currentLang === 'th' ? 'ปิดแล้ว' : 'Closed') : (currentLang === 'th' ? 'เปิดใช้งานแล้ว' : 'Active')}</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${currentLang === 'th' ? 'เวลา' : 'Time'}</span><span class="font-bold text-white">${dt}</span></div>
       
@@ -2220,6 +2298,17 @@ async function loadWalletData() {
 
   document.getElementById('profileName').textContent = currentUser.name || '-';
   document.getElementById('profilePhone').textContent = currentUser.phone || '-';
+  // แสดง ID สมาชิก (user_code) ใต้เบอร์โทร พร้อมปุ่มคัดลอก — ซ่อนถ้ายังไม่มีข้อมูล
+  const uidRow = document.getElementById('profileUserIdRow');
+  if (uidRow) {
+    const uc = currentUser.user_code;
+    if (uc !== undefined && uc !== null && uc !== '') {
+      document.getElementById('profileUserId').textContent = uc;
+      uidRow.style.display = 'flex';
+    } else {
+      uidRow.style.display = 'none';
+    }
+  }
   document.getElementById('profileVip').textContent = 'VIP ' + (currentUser.vip || 1);
   const kycEl = document.getElementById('profileKyc');
   kycEl.textContent = currentUser.kycStatus === 'verified' ? (currentLang === 'th' ? 'ยืนยันแล้ว' : 'Verified') : currentLang === 'th' ? 'ยังไม่ยืนยัน' : 'Not Verified';
@@ -2309,9 +2398,13 @@ async function submitDeposit() {
     created_at: new Date().toISOString()
   };
 
-  await DB.createDeposit(deposit);
-  showToast(t('depositSuccess')); 
-  closeModal('depositModal'); 
+  setBtnLoading('depositSubmitBtn', true);
+  try {
+    await DB.createDeposit(deposit);
+  } catch (e) { setBtnLoading('depositSubmitBtn', false); showToast((e && e.message) || (t('error') || 'Error')); return; }
+  setBtnLoading('depositSubmitBtn', false);
+  showToast(t('depositSuccess'));
+  closeModal('depositModal');
 
   document.getElementById('depositAmount').value = '';
   document.getElementById('uploadPreview').classList.add('hidden');
@@ -2348,11 +2441,15 @@ async function submitWithdraw() {
     created_at: new Date().toISOString()
   };
 
-  await DB.createWithdraw(withdraw);
-  currentUser = await DB.getCurrentUser();
+  setBtnLoading('withdrawSubmitBtn', true);
+  try {
+    await DB.createWithdraw(withdraw);
+    currentUser = await DB.getCurrentUser();
+  } catch (e) { setBtnLoading('withdrawSubmitBtn', false); showToast((e && e.message) || (t('error') || 'Error')); return; }
+  setBtnLoading('withdrawSubmitBtn', false);
 
-  showToast(t('withdrawSuccess')); 
-  closeModal('withdrawModal'); 
+  showToast(t('withdrawSuccess'));
+  closeModal('withdrawModal');
   loadWalletData(); 
   loadWithdrawHistory();
 }
@@ -2377,11 +2474,15 @@ async function submitP2PWithdraw() {
     created_at: new Date().toISOString()
   };
 
-  await DB.createWithdraw(withdraw);
-  currentUser = await DB.getCurrentUser();
+  setBtnLoading('p2pWithdrawSubmitBtn', true);
+  try {
+    await DB.createWithdraw(withdraw);
+    currentUser = await DB.getCurrentUser();
+  } catch (e) { setBtnLoading('p2pWithdrawSubmitBtn', false); showToast((e && e.message) || (t('error') || 'Error')); return; }
+  setBtnLoading('p2pWithdrawSubmitBtn', false);
 
-  showToast(t('withdrawSuccess')); 
-  closeModal('p2pWithdrawModal'); 
+  showToast(t('withdrawSuccess'));
+  closeModal('p2pWithdrawModal');
   loadWalletData(); 
   loadWithdrawHistory();
 }
@@ -2391,15 +2492,53 @@ function copyToClipboard(elementId) {
   navigator.clipboard.writeText(el.textContent).then(() => showToast(t('copied')));
 }
 
+// คัดลอก ID สมาชิก (user_code) — ใช้ navigator.clipboard พร้อม fallback execCommand
+function fallbackCopyText(txt) {
+  const ta = document.createElement('textarea');
+  ta.value = txt;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+function copyUserId() {
+  const el = document.getElementById('profileUserId');
+  if (!el) return;
+  const txt = el.textContent.trim();
+  if (!txt) return;
+  const done = function () { showToast(currentLang === 'th' ? 'คัดลอก ID แล้ว' : 'ID copied'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(function () { fallbackCopyText(txt); done(); });
+  } else {
+    fallbackCopyText(txt);
+    done();
+  }
+}
+
 // ==================== CHAT ====================
 // Near-real-time chat: while the chat modal is open we poll ONLY this user's
-// thread every 3.5s (skipped while the tab is hidden) using the ?since=
+// thread every 2s (skipped while the tab is hidden) using the ?since=
 // cursor, and append just the new messages — no full re-render, so the scroll
 // position and already-loaded images stay put. Polling stops the moment the
 // modal closes, keeping us far below the 1500 req/15min rate limit.
 let chatPollTimer = null;
 let chatLastTs = null;          // ISO timestamp cursor for ?since=
 let chatKnownIds = {};          // ids already rendered (dedup optimistic vs polled)
+// Guest chat (ผู้เยี่ยมชมที่ยังไม่ล็อกอิน): token เก็บใน localStorage
+// bg_guest_token; thread ฝั่ง server คือ chats.user_id = 'guest:<token>'
+let guestChatMode = false;
+function guestChatToken() { try { return localStorage.getItem('bg_guest_token') || null; } catch (e) { return null; } }
+function saveGuestToken(tk) { try { if (tk) localStorage.setItem('bg_guest_token', tk); } catch (e) {} }
+// ปุ่มไอคอนหูฟังบนแถบบน: ล็อกอินแล้ว = แชทสมาชิกเดิม, ยังไม่ล็อกอิน = guest chat
+function openSupportChat() {
+  guestChatMode = !currentUser;
+  const ttl = document.getElementById('chatTitle');
+  if (ttl) ttl.textContent = guestChatMode ? (t('chatTitle') + ' • ' + (currentLang === 'th' ? 'ผู้เยี่ยมชม' : 'Guest')) : t('chatTitle');
+  openModal('chatModal');
+}
 
 function chatModalIsOpen() {
   const m = document.getElementById('chatModal');
@@ -2430,7 +2569,18 @@ function appendChatMessages(chats) {
 }
 
 async function pollChatNew() {
-  if (!currentUser || !chatModalIsOpen() || document.hidden) return;
+  if (!chatModalIsOpen() || document.hidden) return;
+  if (guestChatMode) {
+    const gtk = guestChatToken();
+    if (!gtk) return;
+    try {
+      const list = await DB.guestChatList(gtk, chatLastTs || undefined);
+      const fresh = (list || []).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+      appendChatMessages(fresh);
+    } catch (e) { console.error('guest chat poll', e); }
+    return;
+  }
+  if (!currentUser) return;
   try {
     const list = await DB.getChatsByUser(currentUser.id, chatLastTs || undefined);
     const fresh = (list || []).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
@@ -2440,7 +2590,8 @@ async function pollChatNew() {
 
 function startChatPolling() {
   stopChatPolling();
-  chatPollTimer = setInterval(function () { if (!document.hidden) pollChatNew(); }, 3500);
+  // guest poll 4 วินาที/ครั้ง (เบากว่าสมาชิก 2s) เฉพาะตอนหน้าต่างแชทเปิด — กัน rate limit สะสมจากผู้เยี่ยมชมจำนวนมาก
+  chatPollTimer = setInterval(function () { if (!document.hidden) pollChatNew(); }, guestChatMode ? 4000 : 2000);
 }
 
 function stopChatPolling() {
@@ -2452,6 +2603,7 @@ function buildChatId() {
 }
 
 async function sendMessage() {
+  if (guestChatMode) return sendGuestMessage();
   if (!currentUser) return;
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
@@ -2486,12 +2638,37 @@ async function sendMessage() {
   pollChatNew();
 }
 
+// Guest chat (ไม่ล็อกอิน): ส่งข้อความผ่าน /api/chat/guest — token ถูกสร้างอัตโนมัติครั้งแรก
+async function sendGuestMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const sendBtn = document.getElementById('chatSendBtn');
+  if (sendBtn) sendBtn.disabled = true; // กันกดซ้ำ
+  const nowIso = new Date().toISOString();
+  const chat = { id: buildChatId(), sender: 'user', message: text, type: 'text', createdAt: nowIso, created_at: nowIso };
+  input.value = '';
+  chatKnownIds[chat.id] = true;
+  if (!chatLastTs || nowIso > chatLastTs) chatLastTs = nowIso;
+  if (chatModalIsOpen()) {
+    const container = document.getElementById('chatMessages');
+    container.insertAdjacentHTML('beforeend', chatBubbleHtml(chat));
+    container.scrollTop = container.scrollHeight;
+  }
+  try {
+    const r = await DB.guestChatSend({ token: guestChatToken(), message: text, type: 'text' });
+    if (r && r.token) saveGuestToken(r.token);
+  } catch (e) { console.error(e); showToast((e && e.message) || t('error') || 'ส่งข้อความไม่สำเร็จ'); }
+  if (sendBtn) sendBtn.disabled = false;
+  pollChatNew();
+}
+
 async function sendChatImage(imageUrl) {
   const nowIso = new Date().toISOString();
   const chat = {
     id: buildChatId(),
-    user_id: currentUser.id,
-    userId: currentUser.id,
+    user_id: currentUser ? currentUser.id : undefined,
+    userId: currentUser ? currentUser.id : undefined,
     sender: 'user',
     message: imageUrl,
     type: 'image',
@@ -2505,17 +2682,25 @@ async function sendChatImage(imageUrl) {
     container.insertAdjacentHTML('beforeend', chatBubbleHtml(chat));
     container.scrollTop = container.scrollHeight;
   }
+  if (guestChatMode) {
+    try {
+      const r = await DB.guestChatSend({ token: guestChatToken(), message: imageUrl, type: 'image' });
+      if (r && r.token) saveGuestToken(r.token);
+    } catch (e) { console.error(e); showToast((e && e.message) || t('uploadFailed') || 'อัพโหลดรูปไม่สำเร็จ'); }
+    pollChatNew();
+    return;
+  }
   await DB.createChat(chat);
   pollChatNew();
 }
 
 async function handleChatImageUpload(input) {
-  if (!currentUser) return;
+  if (!currentUser && !guestChatMode) return;
   const file = input.files[0];
   if (!file) return;
 
   let imageUrl = null;
-  if (isSupabaseConnected()) {
+  if (!guestChatMode && isSupabaseConnected()) {
     try {
       imageUrl = await DB.uploadFile('avatars', `chat_${Date.now()}_${file.name}`, file);
     } catch(e) { console.log('Upload failed, using data URL'); }
@@ -2535,9 +2720,17 @@ async function handleChatImageUpload(input) {
 }
 
 async function renderChat() {
-  if (!currentUser) return;
   const container = document.getElementById('chatMessages');
-  const chats = (await DB.getChatsByUser(currentUser.id)).sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
+  let chats = [];
+  if (guestChatMode) {
+    // ผู้เยี่ยมชม: มี token แล้วค่อยดึงประวัติ; ยังไม่มี = ห้องว่าง (token ถูกสร้างตอนส่งข้อความแรก)
+    const gtk = guestChatToken();
+    if (gtk) { try { chats = await DB.guestChatList(gtk); } catch (e) { console.error(e); } }
+  } else {
+    if (!currentUser) return;
+    chats = await DB.getChatsByUser(currentUser.id);
+  }
+  chats = chats.sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt));
   // Full render resets the incremental cursor/dedup state.
   chatKnownIds = {};
   chatLastTs = null;
@@ -2728,8 +2921,8 @@ async function loadFundData() {
   startFundTicker();
 }
 
-// ปิดผลกองทุนอัตโนมัติเมื่อครบกำหนดเวลา — คืนเงินต้น+กำไรถ้าแอดมินตั้ง "ชนะ" ไว้
-// ถ้าแอดมินยังไม่ได้ตั้งผล server จะสุ่มผลให้ตอน settle (ดูผลได้จากรายการ)
+// ปิดผลกองทุนอัตโนมัติเมื่อครบกำหนดเวลา — คืนเงินต้น+กำไรตาม % เป๊ะถ้าผล "ชนะ"
+// ถ้าแอดมินยังไม่ได้ตั้งผล server จะกำหนดผลให้ตอน settle (กำไรคำนวณตาม % เสมอ ไม่สุ่มยอด)
 async function processFundSettlements() {
   if (!currentUser) return 0;
   const funds = await DB.getFundsByUser(currentUser.id);
@@ -2739,12 +2932,12 @@ async function processFundSettlements() {
     if (f.status === 'active' && f.endTime && new Date(f.endTime).getTime() <= now) {
       const amount = parseFloat(f.amount) || 0;
       if (typeof DB.settleFund === 'function') {
-        // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/endTime สุ่มยอดกำไร/ขาดทุน (ถ้าแอดมินยังไม่ตั้งผล) และเครดิตยอดเงินผ่าน transaction ledger
+        // Production: settle ผ่าน Worker API — server ตรวจเจ้าของ/endTime คำนวณกำไรตาม % เป๊ะ และเครดิตยอดเงินผ่าน transaction ledger
         try {
           const r = await DB.settleFund(f.id);
           const sf = (r && r.fund) || {};
           const res = sf.result || f.result;
-          // ใช้ยอดจริงที่ server สุ่มและบันทึกไว้ตอน settle (ไม่คำนวณเองฝั่ง client)
+          // ใช้ยอดจริงที่ server คำนวณตาม % และบันทึกไว้ตอน settle (ไม่คำนวณเองฝั่ง client)
           const settledProfit = (typeof sf.profit === 'number') ? sf.profit : (res === 'win' ? amount * (parseFloat(f.percent) || 0) / 100 : -amount);
           if (res === 'win') showToast(t('fundSettledWin') + settledProfit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
           else showToast(t('fundSettledLoss') + Math.abs(settledProfit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
@@ -2753,19 +2946,13 @@ async function processFundSettlements() {
         } catch (e) { console.error('settleFund failed:', e); }
         continue;
       }
-      // Fallback โหมด offline/localStorage (ไม่มี Worker API)
-      const profit = f.result === 'win' ? randomizeProfit(amount * (parseFloat(f.percent) || 0) / 100) : -randomizeLoss(amount);
-      if (f.result === 'win') {
-        currentUser.balance = (parseFloat(currentUser.balance) || 0) + amount + profit;
-        await DB.updateUser(currentUser.id, { balance: currentUser.balance });
-        await DB.setCurrentUser(currentUser);
-        showToast(t('fundSettledWin') + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
-      } else if (f.result === 'lose') {
-        showToast(t('fundSettledLoss') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 }));
-      } else {
-        continue; // offline mode ไม่สามารถสุ่มผลได้ ปล่อยให้ server settle
-      }
-      await DB.updateFund(f.id, { status: 'completed', profit: profit, settledAt: new Date().toISOString() });
+      // Fallback โหมด offline/localStorage (ไม่มี Worker API) — กองทุนกำไรเสมอ คำนวณเป๊ะตาม % (ไม่สุ่ม)
+      const profit = Math.round(amount * (parseFloat(f.percent) || 0) / 100 * 100) / 100;
+      currentUser.balance = (parseFloat(currentUser.balance) || 0) + amount + profit;
+      await DB.updateUser(currentUser.id, { balance: currentUser.balance });
+      await DB.setCurrentUser(currentUser);
+      showToast(t('fundSettledWin') + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+      await DB.updateFund(f.id, { status: 'completed', result: 'win', profit: profit, settledAt: new Date().toISOString() });
       settled++;
     }
   }
@@ -2860,16 +3047,16 @@ async function openJoinFund(idx) {
   const p = pkgs[idx];
   if (!p) return;
   fundSelectedPkg = p;
+  // รวมได้รับ = เงินลงทุน × (1 + อัตรากำไร/100) — คำนวณเป๊ะตาม % จาก package data (ไม่ hardcode)
   const profit = p.amount * p.percent / 100;
-  const totalMin = p.amount + profit;
-  const totalMax = p.amount + profit * 1.8;
+  const totalReceive = p.amount * (1 + p.percent / 100);
   const bal = parseFloat(currentUser.balance) || 0;
   document.getElementById('fundJoinContent').innerHTML = `
     <div class="bg-[#111] p-4 rounded-2xl space-y-2 text-sm">
       <div class="flex justify-between"><span class="text-gray-400">${t('fundInvestAmount')}</span><span class="text-white font-bold">$${Number(p.amount).toLocaleString()}</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${t('fundProfitRate')}</span><span class="text-green-400 font-bold">${p.percent}%</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${t('fundDuration')}</span><span class="text-white font-bold">${p.days} ${t('daysUnit')}</span></div>
-      <div class="flex justify-between border-t border-[#262626] pt-2"><span class="text-gray-400">${t('fundTotalReceive')}</span><span class="text-yellow-400 font-bold">$${totalMin.toLocaleString('en-US', { minimumFractionDigits: 2 })} – $${totalMax.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
+      <div class="flex justify-between border-t border-[#262626] pt-2"><span class="text-gray-400">${t('fundTotalReceive')}</span><span class="text-yellow-400 font-bold">$${totalReceive.toFixed(2)}</span></div>
       <div class="flex justify-between"><span class="text-gray-400">${t('fundBalanceLabel')}</span><span class="${bal >= p.amount ? 'text-white' : 'text-red-400'} font-bold">$${bal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span></div>
     </div>
     ${bal < p.amount ? '<div class="text-red-400 text-xs text-center">' + t('insufficientDeposit') + '</div>' : ''}`;
@@ -2892,12 +3079,14 @@ async function confirmJoinFund() {
     status: 'active', result: null, profit: 0,
     createdAt: new Date(now).toISOString(), created_at: new Date(now).toISOString()
   };
+  setBtnLoading('fundJoinConfirm', true);
   if (typeof DB.joinFund === 'function') {
     // Online mode: server debits balance atomically via transaction ledger
     try {
       const r = await DB.joinFund(fund);
       if (r && r.user) { currentUser = r.user; await DB.setCurrentUser(currentUser); }
     } catch (e) {
+      setBtnLoading('fundJoinConfirm', false);
       showToast((e && e.message) || (currentLang === 'th' ? 'เข้าร่วมกองทุนไม่สำเร็จ' : 'Failed to join fund'));
       fundSelectedPkg = null; closeModal('fundJoinModal'); return;
     }
@@ -2906,6 +3095,7 @@ async function confirmJoinFund() {
     await DB.createFund(fund);
     await DB.updateUser(currentUser.id, { balance: bal - p.amount });
   }
+  setBtnLoading('fundJoinConfirm', false);
   currentUser = await DB.getCurrentUser();
   fundSelectedPkg = null;
   closeModal('fundJoinModal');
@@ -2934,15 +3124,15 @@ async function renderFundList() {
   el.innerHTML = list.map(f => {
     const amount = parseFloat(f.amount) || 0;
     const isDone = f.status === 'completed';
-    const isWin = f.result === 'win';
-    // รายการที่ปิดแล้วใช้ยอด profit จริงที่บันทึกตอน settle; รายการ active แสดงค่าประมาณการ base
+    // กองทุน: กำไรเสมอ ไม่มีผลแพ้
+    // active: คำนวณเป๊ะตาม % ของแพ็กเกจ (เงินต้น × %/100); done: ใช้ยอดจริงที่บันทึกตอน settle
     const profit = isDone ? Math.abs(parseFloat(f.profit) || 0) : amount * (parseFloat(f.percent) || 0) / 100;
-    const total = isDone ? (isWin ? amount + profit : amount - profit) : amount + profit;
-    const ringColor = isDone ? (isWin ? '#22c55e' : '#ef4444') : '#22c55e';
+    const total = amount + profit;
+    const ringColor = '#22c55e';
     let ringText, ringFrac;
     if (isDone) {
       ringFrac = 1;
-      ringText = isWin ? 'ชนะ' : 'แพ้';
+      ringText = 'กำไร';
     } else {
       const end = new Date(f.endTime).getTime();
       const start = new Date(f.startTime).getTime();
@@ -2951,7 +3141,7 @@ async function renderFundList() {
       ringText = now >= end ? 'รอผล' : fmtFundCountdown(end - now);
     }
     const statusLine = isDone
-      ? (isWin ? '<span style="color:#22c55e;">ชนะ +$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>' : '<span style="color:#ef4444;">ขาดทุน -$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>')
+      ? '<span style="color:#22c55e;">+$' + profit.toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</span>'
       : 'กำไร: ' + f.percent + '%';
     return `<div class="fund-item">
       <div class="fund-ring-wrap">
@@ -3060,12 +3250,35 @@ async function applyHeroSlides() {
       const el = document.getElementById('heroBg' + n);
       if (!el) return;
       const src = settings['heroImage' + n];
-      if (src) {
-        el.style.backgroundImage = 'url(' + src + ')';
-        el.classList.add('has-image');
-      } else {
+      // วิดีโอ (อัปโหลดขึ้น R2 จากหลังบ้าน นามสกุล .mp4/.webm/.mov) แสดงเป็น <video> เต็มกรอบ
+      const isVid = !!(src && /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(String(src)));
+      let vid = el.querySelector('video.hero-bg-video');
+      if (src && isVid) {
         el.style.backgroundImage = '';
-        el.classList.remove('has-image'); // กลับเป็นพื้นหลังสีส้มเดิม
+        if (!vid) {
+          vid = document.createElement('video');
+          vid.className = 'hero-bg-video';
+          vid.autoplay = true; vid.loop = true;
+          vid.muted = true; vid.setAttribute('muted', ''); // autoplay policy: ต้อง muted เสมอ
+          vid.playsInline = true; vid.setAttribute('playsinline', '');
+          vid.preload = 'auto';
+          el.insertBefore(vid, el.firstChild);
+        }
+        vid.muted = true; // กัน attr หลุด — เบราว์เซอร์บล็อก autoplay ที่มีเสียง
+        if (vid.getAttribute('src') !== src) {
+          vid.src = src;
+          const p = vid.play(); if (p && p.catch) p.catch(function() {});
+        }
+        el.classList.add('has-image'); // ใช้ overlay + ตัวหนังสือขาวเหมือนสไลด์รูป
+      } else {
+        if (vid) { try { vid.pause(); } catch(e) {} vid.remove(); }
+        if (src) {
+          el.style.backgroundImage = 'url(' + src + ')';
+          el.classList.add('has-image');
+        } else {
+          el.style.backgroundImage = '';
+          el.classList.remove('has-image'); // กลับเป็นพื้นหลังสีส้มเดิม
+        }
       }
     });
     goHeroSlide(heroIdx); // refresh text color/dots
@@ -3084,12 +3297,12 @@ async function applySettings() {
   const titleColor = settings.siteTitleColor || '#f0b90b';
   document.getElementById('siteTitle').style.color = titleColor;
   document.getElementById('siteTitle').style.textShadow = '0 0 10px ' + titleColor + '4d';
-  // คำโปรยหน้าแรก: ค่าว่าง/null (แอดมินลบออก) = ซ่อน element ทั้งก้อน
-  // default "เริ่มปั่นพอร์ตกันเลย" ใช้เฉพาะตอนที่ยังไม่เคยตั้งค่า (key ไม่มีใน settings)
+  // คำโปรยหน้าแรก: ไม่มี default — แสดงเฉพาะเมื่อแอดมินตั้งค่า welcomeText เอง
+  // ค่าว่าง/null/ไม่มี key = ซ่อน element ทั้งก้อน
   const welcomeEl = document.getElementById('homeWelcomeText');
   let welcomeVal = settings.welcomeText;
   if (welcomeVal === undefined || welcomeVal === null) welcomeVal = settings.welcome_text;
-  if (welcomeVal === undefined || welcomeVal === null) welcomeVal = 'เริ่มปั่นพอร์ตกันเลย';
+  if (welcomeVal === undefined || welcomeVal === null) welcomeVal = '';
   welcomeVal = String(welcomeVal).trim();
   if (welcomeVal) {
     welcomeEl.style.display = '';
