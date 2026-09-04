@@ -1815,7 +1815,7 @@ async function setTradeResultNow(tradeId, result, btn) {
   try {
   const tr = (await DB.getTrades()).find(x => x.id === tradeId);
   if (!tr || tr.status !== 'pending') { loadTrades(); return; }
-  await DB.updateTrade(tradeId, { result: result, resultSetAt: new Date().toISOString() });
+  await DB.adminPresetTrade(tradeId, { result: result });
   const end = tr.endTime ? new Date(tr.endTime).getTime() : 0;
   if (Date.now() >= end) {
     await processDueTradeSettlements();

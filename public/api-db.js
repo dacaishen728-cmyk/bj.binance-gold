@@ -70,6 +70,7 @@
     getTradesByUser:function(uid){return apiFetch(userListUrl('/api/trades',uid)).then(mineOnly);},
     createTrade:function(t){return apiFetch('/api/wallet/trade',{method:'POST',body:t,idempotencyKey:idKey('trade')}).then(function(r){if(r.user){memoryUser=r.user;try{if(typeof currentUser!=='undefined')currentUser=r.user;}catch(e){}}return r.trade;});},
     updateTrade:function(id,up){return apiFetch('/api/trades/'+enc(id),{method:'PUT',body:up});},
+    adminPresetTrade:function(id,body){return apiFetch('/api/admin/trades/'+enc(id)+'/preset',{method:'POST',body});},adminPresetTrade:function(id,body){return apiFetch('/api/admin/trades/'+enc(id)+'/preset',{method:'POST',body});},
     settleTrade:function(id){return apiFetch('/api/wallet/trades/'+enc(id)+'/settle',{method:'POST'}).then(function(r){if(r.user){memoryUser=r.user;try{if(typeof currentUser!=='undefined')currentUser=r.user;}catch(e){}}return r;});},
     setTrades:function(){return Promise.resolve();},
     getFunds:function(){return apiFetch(listUrl('/api/funds'));},
